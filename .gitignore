@@ -1,2 +1,4 @@
 output/*
 *.py[cod]
+*.swo
+*.swp
