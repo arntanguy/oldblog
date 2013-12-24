@@ -2,6 +2,7 @@ Title: VIM : Un Essai de plugin pour la compilation C++
 Date: 2009-12-23
 Tags: VIM 
 Summary: Building within VIM can somtimes be quite plainful. This article is an attempt at improving this by implementing an auto-parsing feature for missing includes and out-of-source build.
+disqus_identifier: geenux-vim-plugin-cpp
 
 J’aime beaucoup utiliser vim pour programmer (je n’ai jamais réussi à me faire à la façon de penser d’emacs et vim me convient très bien une fois configuré), mais jusqu’ici une chose me chagrinait, la compilation en c++. Les principaux points qui me dérangeaient étaient :
 

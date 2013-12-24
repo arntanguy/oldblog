@@ -1,11 +1,8 @@
 Title: Psp SLIM 200 Chicken & Custom Firmware Gen B 
 Date: 2009-12-23 
-Tags: programmation, shadermaker, bugfix, glsl, shaders, shader editor 
-Summary: When using a video card without support for goemetry shaders,
-ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric
-shader while this isn't possible. This article provides the necessary source
-code to fix this issue. 
-
+Tags: psp 
+Summary: When using a video card without support for goemetry shaders, ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric shader while this isn't possible. This article provides the necessary source code to fix this issue. 
+disqus_identifier: geenux-psp-chicken-firmware
 
 J’ai pas mal galéré pour avoir ma PSP Slim 2000 fonctionnelle avec un custom firmware pour pouvoir lancer des homebrew (applications non officielles), notamment bookr permettant de lire des pdf.
 

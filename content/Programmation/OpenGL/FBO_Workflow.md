@@ -2,6 +2,7 @@ Title: Using CGEngine's FBOs
 Date: 2013-12-09 
 Tags: programmation, opengl, FBO, glsl 
 Summary: Using FBO's can sometimes be quite tricky. I've written a class making it easier to use. It can still however, when not used properly be a pain to use. The goal of this document is to show the overall steps required to using my FBO system. 
+disqus_identifier: geenux-using-CGEngine-fbo
 
 Create a FBO:
 
@@ -66,7 +67,8 @@ been done ***before*** the rendering loop.
         glBindVertexArray( vao );
         glDrawArrays( GL_POINTS, 0, 1 );
         // Don't forget to clear the vertex array, or you might run into some
-        ugly surprises, like segfaults on glDrawArray calls for instance.
+        // ugly surprises, like segfaults on glDrawArray calls for instance.
         glBindVertexArray(0);
 
 
+You can find the fullscreen quad shaders [here]({filename}/Programmation/OpenGL/Fullscreen_quad_geometry.md)

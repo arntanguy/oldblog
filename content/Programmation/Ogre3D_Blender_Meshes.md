@@ -2,6 +2,7 @@ Title: Créez Vos Mesh Ogre Sous Blender !
 Date: 2010-03-04 
 Tags: blender, ogre3D, 3D
 Summary: Explains how to create UV-mapped models using blender, and export them for Ogre3D engine.
+disqus_identifier: geenux-create-mesh-ogre-blender
 
 Si vous aimez le logiciel de modélisation 3D Blender, vous serez sans doute ravi de l’utiliser pour créer votre monde dans votre jeu utilisant le moteur Ogre.
 La bonne nouvelle, c’est que c’est d’une simplicité impressionnante, je vais profiter de ce billet pour me faire un petit mémo sur comment faire, ainsi que comment utiliser la technique de l’UV mapping avec Blender (je débute avec la 3D, que ça soit en programmation ou modélisation).

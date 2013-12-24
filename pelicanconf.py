@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 AUTHOR = 'Arnaud TANGUY'
-SITENAME = 'Improve The World'
+SITENAME = 'VIM Proves The World'
 SITEURL = ''
 
 #THEME = "themes/bootstrap2"
@@ -26,9 +26,11 @@ LINKS =  (('Afnarel', 'http://afnarel.com/'),
           ('You can modify those links in your config file', '#'))
 
 # Social widget
-SOCIAL = (('Twitter', 'https://twitter.com/arntanguy'),
+SOCIAL = (('LinkedIn', 'http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6'),
+          ('Twitter', 'https://twitter.com/arntanguy'),
           ('Github', 'https://github.com/geenux'),
-          ('Email', 'mailto:arn.tanguy@gmail.com'))
+          ('Bitbucket', 'https://bitbucket.org/arn_tanguy'),
+          ('Google+', 'https://plus.google.com/u/0/+ArnaudTanguy29'))
 
 DEFAULT_PAGINATION = 10
 
@@ -48,9 +50,11 @@ TWITTER_USERNAME = 'arntanguy'
 # specific to Elegant theme:
 # http://oncrashreboot.com/elegant-a-clean-theme-for-pelican-with-search-feature
 PLUGIN_PATH = 'plugins'
-PLUGINS = ['sitemap', 'extract_toc', 'tipue_search']
+# Plugins:
+#- Latex plugin uses MathJaX
+PLUGINS = ['sitemap', 'extract_toc', 'tipue_search', 'latex']
 MD_EXTENSIONS = ['codehilite(css_class=highlight)', 'extra', 'headerid', 'toc']
-STATIC_PATHS = ['theme/images', 'images']
+STATIC_PATHS = ['theme/images', 'images', 'download']
 DIRECT_TEMPLATES = (('index', 'tags', 'categories','archives',
                      'search', '404'))
 TAG_SAVE_AS = ''
@@ -66,8 +70,7 @@ LANDING_PAGE_ABOUT={'title' : 'Computer Graphics, Vision, Augmented Reality',
                     I am mostly interested in real-time rendering, real-time physics
                     and augmented reality, and hopefully you'll be seeing a lot of those
                     in this blog.
-                    In 2012, I studied abroad at Trinity College Dublin. I'll
-                    always keep very found memories of this place. You'll see
+                    In 2012, I studied abroad at Trinity College Dublin. You'll see
                     some of my projects written during this year (a simple
                     physics engine along with some rendering projects).
 
@@ -94,8 +97,13 @@ use in my various projects"""},
 RECENT_ARTICLES_COUNT=15
 
 
+########### COMMENTS
 COMMENTS_INTRO="""So what do you think? Did I miss something? Is any part
 unclear? Leave your comments below."""
+DISQUS_SITENAME="geenux"
+
+### GOOGLE
+GOOGLE_ANALYTICS="UA-46439484-1"
 
 # Appears before the licence and after site name
 SITESUBTITLE=""

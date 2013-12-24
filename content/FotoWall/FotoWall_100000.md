@@ -1,7 +1,8 @@
-Title: FOTOWALL : 100 000 ! 
-Date: 2009-09-06 
+Title: FOTOWALL : 100 000 !
+Date: 2009-09-06
 Tags: fotowall
-Summary: 100 000 Téléchargements! 
+Summary: 100 000 Téléchargements!
+disqus_identifier: geenux-fotowall-100000-downloads
 
 
 Aujourd’hui, Fotowall a atteind les **100 000** télécharments ! C’est un
@@ -16,7 +17,7 @@ Pour célébrer ce résultat, voici une petite vidéo de la prochaine version (q
 
 <iframe width="420" height="315" src="//www.youtube.com/embed/lggxIIQh7-U" frameborder="0" allowfullscreen></iframe>
 
-Un grand merci à toute l’équipe : Enrico Ros, Arnaud Tanguy, Alessandro Portale, Andreas Brech, Georges Dubus, ainsi qu’aux traducteurs Martin Zimmermann and Marcio Moraes.
+Un grand merci à toute l’équipe : *Enrico Ros, Arnaud Tanguy*, Alessandro Portale, Andreas Brech, Georges Dubus, ainsi qu’aux traducteurs Martin Zimmermann and Marcio Moraes.
 
 
 

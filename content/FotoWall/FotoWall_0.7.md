@@ -1,9 +1,9 @@
-Title: FotoWall 0.7 
-Date: 2009-07-24 
+Title: FotoWall 0.7
+Date: 2009-07-24
 Tags: fotowall
-Summary: Release information for Fotowall 0.7 
-subtitle: It's getting better! 
-disqus_identifier: arntanguy_fotowall_0.7
+Summary: Release information for Fotowall 0.7
+subtitle: It's getting better!
+disqus_identifier: geenux_fotowall_0.7
 
 FotoWall est un logiciel libre disponible sous licence GPL développé par Enrico Ros et moi-même. Il vous permet de présenter simplement vos photos, en les disposant aisément, appliquant des transformations (rotations, perspectives, effets). Nous venons de réaliser une nouvelle version, d’où cet article pour vous faire découvrir FotoWall pour ceux qui ne connaissent pas, et informer les autres.
 

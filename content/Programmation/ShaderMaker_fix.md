@@ -1,10 +1,9 @@
 Title: ShaderMaker: Fix bug with geometry shaders!
 Date: 2013-02-03 
 Tags: programmation, shadermaker, bugfix, glsl, shaders, shader editor 
-Summary: When using a video card without support for goemetry shaders,
-ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric
-shader while this isn't possible. This article provides the necessary source
-code to fix this issue. 
+Summary: When using a video card without support for goemetry shaders, ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric shader while this isn't possible. This article provides the necessary source code to fix this issue. 
+disqus_identifier: geenux-shadermaker-fix-geometry-shaders
+
 
 Hi!
 

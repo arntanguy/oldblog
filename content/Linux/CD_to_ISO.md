@@ -1,8 +1,8 @@
 Title: Useful usages of dd.
 Date: 2011-08-13 
-Tags: linux, ISO, CD, dd
+Tags: linux, ISO, CD, bash 
 Summary: Why use a graphical application to convert a CD to ISO when you can use dd? Or to create a bootable USB stick? In this post you'll see some very useful usages of the **dd** command.
-
+disqus_identifier: geenux-useful-usage-of-dd 
 
 Hello world,
 Why bother using heavy and complicated tools to create and use ISO files? Why

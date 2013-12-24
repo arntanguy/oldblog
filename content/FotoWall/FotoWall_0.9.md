@@ -2,6 +2,7 @@ Title: FotoWall 0.9
 Date: 2009-12-23
 Tags: fotowall
 Summary: Release information for Fotowall 0.9
+disqus_identifier: geenux-fotowall-0.9
 
 
 **Fotowall 0.9** est enfin sorti ! Pour ceux qui ne le saurait pas encore, Fotowall
@@ -32,5 +33,5 @@ Pour le télécharger, c’est [**par ici**](http://enricoros.com/opensource/fot
 ![Fotowall 0.9 - Fenêtre principale]({filename}/images/fotowall/fotowall0.9/fotowall0.9.png)
 ![Fotowall 0.9 - Canvas Zoomable]({filename}/images/fotowall/fotowall0.9/fotowall0.9_zoomable.png)
 
- 
+
 

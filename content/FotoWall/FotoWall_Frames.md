@@ -2,6 +2,7 @@ Title: Create Frames For FotoWall
 Date: 2010-10-27 
 Tags: fotowall
 Summary: Explains how to create custom frames for Fotowall 
+disqus_identifier: geenux-fotowall-create-frames
 
 
 This article is a translation of [Benoît Bâlon’s article (fr)](http://benoit.balon.free.fr/?p=659) concerning the frame creation for Fotowall. I’m translating this article to increase the reach of his work, and meet the ever growing reclamations for more frames.

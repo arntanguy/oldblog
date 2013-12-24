@@ -2,6 +2,7 @@ Title: VIM : My configuration
 Date: 2009-12-23
 Tags: VIM 
 Summary: Configuring VIM correctly can make it a hugely efficient editor. Here you'll find my personnal configuration files that can be use for developping in many languages, mainly C++ though.
+disqus_identifier: geenux-vim-configuration
 
 
 Tant qu’à m’être fait un vim qui me convient à peu près, je me suis dit que ça

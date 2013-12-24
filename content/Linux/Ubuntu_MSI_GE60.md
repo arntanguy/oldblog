@@ -1,7 +1,8 @@
 Title: Install Ubuntu on MSI-GE60 0NC 
 Date: 2013-05-10 
 Tags: linux, ubuntu 
-Summary: 
+Summary: Just some pointers on installing Ubuntu on a MSI-GE60 ONC
+disqus_identifier: geenux-install-ubuntu-msi-ge60
 
 Hi,
 It’s been a while since I last had a bit of trouble installing Ubuntu, so I decided to write a small article about it.

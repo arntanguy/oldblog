@@ -2,6 +2,7 @@ Title: Ripper l'audio d'une vidéo avec FFMPEG.
 Date: 2011-12-19 
 Tags: linux, ffmpeg, audio, video, rip 
 Summary: Ripping audio from videos using ffmpeg 
+disqus_identifier: geenux-ripper-audio-video-ffmpeg
 
 Bonjour,
 Vu que j’ai eu un peu de mal à trouver comment ripper la bande son d’une vidéo (en l’occurence de youtube), j’ai fait un petit script pour le faire simplement :

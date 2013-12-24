@@ -1,10 +1,11 @@
 Title: Configure USB debugging of Android on GNU/Linux 
 Date: 2012-02-05 
-Tags: programmation, shadermaker, bugfix, glsl, shaders, shader editor 
+Tags: programmation, android, linux 
 Summary: When using a video card without support for goemetry shaders,
 ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric
 shader while this isn't possible. This article provides the necessary source
 code to fix this issue. 
+disqus_identifier: geenux-usb-debugging-android
 
 
 You want to develop your own application and test it directly your phone instead of the virtual machine? Or perhaps you just want to use some cool features of the SDK to manage your phone? Whatever the reason, here is how to do it.

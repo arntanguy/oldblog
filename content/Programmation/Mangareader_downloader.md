@@ -2,6 +2,7 @@ Title: Script de téléchargement pour mangareader.net
 Date: 2012-02-05 
 Tags: programmation, python, manga, script 
 Summary: Reading mangas online is a pain, so why not download them? That's what this script is for, use it wisely!
+disqus_identifier: geenux-script-download-mangareader
 
 
 J’ai réalisé un petit script python pour télécharger les mangas depuis le site

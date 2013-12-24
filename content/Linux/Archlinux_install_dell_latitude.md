@@ -2,6 +2,7 @@ Title: Install ArchLinux on Dell Latitude E5420
 Date: 2012-03-10 
 Tags: linux, archlinux 
 Summary: Explains some specific points of Archlinux installation on a Dell Latitude E5420.
+disqus_identifier: geenux-install-archlinux-dell-latitude-E5420
 
 Je ne compte pas parler de l’installation d’ArchLinux en lui-même, bien assez de documentation existe sur le sujet.
 Je vais me contenter de préciser les parties spécifiques à ce laptop.

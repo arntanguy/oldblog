@@ -2,6 +2,7 @@ Title: Using CMake
 Date: 2009-12-27 
 Tags: fotowall
 Summary: CMake is a building toolkit for both Linux, Windows and Mac OS. It is somewhat similar to the autotools, but much more flexible. You'll learn the basis of how it works here!
+disqus_identifier: geenux-using-cmake
 
 Je me souviens encore des premier projets pour lesquels j’ai tenté de comprendre comment utiliser cmake pour créer les makefiles.  La doc est tout sauf claire, et le manque de tutoriels sur la base du fonctionnement de cmake manque cruellement. Je vais tâcher de remédier à ce souci, en expliquant comment compiler des projets simples avec cmake.
 
