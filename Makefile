@@ -12,8 +12,8 @@ FTP_HOST=localhost
 FTP_USER=anonymous
 FTP_TARGET_DIR=/
 
-#SSH_HOST=arntanguy.no-ip.org
-SSH_HOST=192.168.1.52
+SSH_HOST=arntanguy.no-ip.org
+#SSH_HOST=192.168.1.52
 SSH_PORT=22
 SSH_USER=pi
 SSH_TARGET_DIR=/var/www/blog

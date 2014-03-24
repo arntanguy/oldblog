@@ -43,6 +43,8 @@ Three.js. I will show you a version of that with the addition of the integration
 
 Here is how to install my version of the blender export plugin:
 
+** Update: ** Thanks to some user submissions, the plugin and loading code has been improved. See the updates section at the end of this article to get the newest files. The installation method is the same.
+
 * Download [the modified exporter for blender 2.69]({filename}/download/io_mesh_threejs_physijs.tar.gz)
 * Untar it in ~/.config/blender/2.69/scripts/addons
 
@@ -155,6 +157,26 @@ Add it to the *OBJECT_PT_physics* class
 **In the engine**, add it to **PhysicsLoader.js**:
 Look for where the Physijs.Mesh are defined, and do the proper changes, that's it, you're all set!
 
+
+# Troubleshoot
+
+*My physics bounding volume seems way bigger than the real object*
+
+There my friend, you probably just encountered one of the most common problems with blender. By default, exporting doesn't apply scale to your mesh, quite stupid ain't it.
+Hopefully it is very easy to solve: select your model in Blender, and then hit Ctrl-A -> Apply Rotation and Scale.
+That's it, you're done ;)
+
+# Updates
+
+Kevin Bikhazi improved upon my plugin. You can find [the modified exporter for blender 2.69 here]({filename}/download/io_mesh_threejs_physijs_update1.tar.gz)
+
+Here is the changelog
+
+* Adds friction and restitution parameters under an object's material tab in Blender. These parameters are very important as they affect how the model interacts with the physics world.
+* The Blender add-on has been modified to handle the new material parameters.  Currently the mods only work with standard materials and not with normal mapped materials.  It should be pretty easy to get it to work with normal maps, that might come soon
+* PhysicsSceneLoader.js modified to use the new friction and restitution parameters.  
+        
+To install it, just untar, and copy the files to the proper location as specified in the article.
 
 # Conclusion
 
