@@ -152,11 +152,6 @@ The kernel is thus ran in order on the 2nd, 3rd.... Nth layer.
 The following kernel can be used to compute the new value for each neuron. Note that it is far from optimal as local memory isn't used at all for the weighted sum!
 
     ::opencl
-        float sigmoid(float x)
-        {
-            return 1./(1. + exp(-x));
-        }
-        
         /**
         * @brief Computes one layer of the perceptron given the previous one and the
         * weights
