@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/webgl.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2013-12-11T00:00:00+01:00</updated><entry><title>Loading a Blender scene in Physijs and Three.js</title><link href="http://arntanguy.no-ip.org/loading-a-blender-scene-in-physijs-and-threejs.html" rel="alternate"></link><published>2013-12-11T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2013-12-11:loading-a-blender-scene-in-physijs-and-threejs.html</id><summary type="html">&lt;h1 id="la-nuit-de-linfo"&gt;La Nuit de l'Info&lt;a class="headerlink" href="#la-nuit-de-linfo" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.github.io/blog/" rel="alternate"></link><link href="http://arntanguy.github.io/blog/feeds/webgl.atom.xml" rel="self"></link><id>http://arntanguy.github.io/blog/</id><updated>2013-12-11T00:00:00+01:00</updated><entry><title>Loading a Blender scene in Physijs and Three.js</title><link href="http://arntanguy.github.io/blog/loading-a-blender-scene-in-physijs-and-threejs.html" rel="alternate"></link><published>2013-12-11T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.github.io,2013-12-11:blog/loading-a-blender-scene-in-physijs-and-threejs.html</id><summary type="html">&lt;h1 id="la-nuit-de-linfo"&gt;La Nuit de l'Info&lt;a class="headerlink" href="#la-nuit-de-linfo" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
 &lt;p&gt;It is quite interesting to realize the context in which these tools have been
 written. It was all done during an event called "&lt;a href="http://www.nuitdelinfo.com/"&gt;La Nuit de l'Info&lt;/a&gt;". It is a
 national event held every year in France in which engineers students are competing from sunset to dawn over
@@ -29,13 +29,13 @@ Three.js. I will show you a version of that with the addition of the integration
 &lt;p&gt;Here is how to install my version of the blender export plugin:&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt; Update: &lt;/strong&gt; Thanks to some user submissions, the plugin and loading code has been improved. See the updates section at the end of this article to get the newest files. The installation method is the same.&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Download &lt;a href="http://arntanguy.no-ip.org/download/io_mesh_threejs_physijs.tar.gz"&gt;the modified exporter for blender 2.69&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Download &lt;a href="http://arntanguy.github.io/blog/download/io_mesh_threejs_physijs.tar.gz"&gt;the modified exporter for blender 2.69&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;Untar it in ~/.config/blender/2.69/scripts/addons&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Then go to Blender "User Preferences"-&amp;gt;"Addons", and look for "three" in the
 research bar. Activate it.&lt;/p&gt;
 &lt;h2 id="whats-new"&gt;What's new&lt;a class="headerlink" href="#whats-new" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;&lt;img alt="Exporter modification" src="http://arntanguy.no-ip.org/images/programmation/blender/blender_threejs.png" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Exporter modification" src="http://arntanguy.github.io/blog/images/programmation/blender/blender_threejs.png" /&gt;&lt;/p&gt;
 &lt;p&gt;As you can see, in the Mesh panel, there is an additionnal &lt;strong&gt;PHYSICS section&lt;/strong&gt;.
 To use it, just select (in object mode) the mesh that you're interested in, and
 set its properties:&lt;/p&gt;
@@ -128,7 +128,7 @@ Look for where the Physijs.Mesh are defined, and do the proper changes, that's i
 Hopefully it is very easy to solve: select your model in Blender, and then hit Ctrl-A -&amp;gt; Apply Rotation and Scale.
 That's it, you're done ;)&lt;/p&gt;
 &lt;h1 id="updates"&gt;Updates&lt;a class="headerlink" href="#updates" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
-&lt;p&gt;Kevin Bikhazi improved upon my plugin. You can find &lt;a href="http://arntanguy.no-ip.org/download/io_mesh_threejs_physijs_update1.tar.gz"&gt;the modified exporter for blender 2.69 here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Kevin Bikhazi improved upon my plugin. You can find &lt;a href="http://arntanguy.github.io/blog/download/io_mesh_threejs_physijs_update1.tar.gz"&gt;the modified exporter for blender 2.69 here&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Here is the changelog&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Adds friction and restitution parameters under an object's material tab in Blender. These parameters are very important as they affect how the model interacts with the physics world.&lt;/li&gt;

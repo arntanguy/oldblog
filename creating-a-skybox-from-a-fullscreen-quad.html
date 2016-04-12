@@ -14,7 +14,7 @@
 <meta name="keywords" content="programmation, opengl, glsl, OpenGL, " />
 
 <meta property="og:title" content="Creating a Skybox from a fullscreen quad! "/>
-<meta property="og:url" content="http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html" />
+<meta property="og:url" content="http://arntanguy.github.io/blog/creating-a-skybox-from-a-fullscreen-quad.html" />
 <meta property="og:description" content="This post shows you how to create a Skybox by generating a plane in a geometry shader and using an inverse projection trick to make it look like a cube skybox :)" />
 <meta property="og:site_name" content="VIM Proves The World" />
 <meta property="og:article:author" content="Arnaud TANGUY" />
@@ -26,11 +26,11 @@
 </title>
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
-        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/pygments.css" media="screen">
-        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/tipuesearch/tipuesearch.css" media="screen">
-        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
-        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/custom.css" media="screen">
-        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.github.io/blog/theme/css/pygments.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.github.io/blog/theme/tipuesearch/tipuesearch.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.github.io/blog/theme/css/elegant.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.github.io/blog/theme/css/custom.css" media="screen">
+        <link href="http://arntanguy.github.io/blog/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
 <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -50,15 +50,15 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </a>
-                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <a class="brand" href="http://arntanguy.github.io/blog/"><span class=site-name>VIM Proves The World</span></a>
                     <div class="nav-collapse collapse">
                         <ul class="nav pull-right top-menu">
-                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
-                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
-                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
-                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
-                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
-                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                            <li ><a href="http://arntanguy.github.io/blog">Home</a></li>
+                            <li ><a href="http://arntanguy.github.io/blog/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.github.io/blog/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.github.io/blog/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.github.io/blog/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.github.io/blog/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
                         </ul>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
 <article>
 <div class="row-fluid">
     <header class="page-header span10 offset2">
-    <h1><a href="http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html"> Creating a Skybox from a fullscreen quad!  </a></h1>
+    <h1><a href="http://arntanguy.github.io/blog/creating-a-skybox-from-a-fullscreen-quad.html"> Creating a Skybox from a fullscreen quad!  </a></h1>
     </header>
 </div>
 
@@ -88,7 +88,7 @@ fullscreen quad in a geometry shader and applying an inverse projection to get
 the eye direction as it would be if we were to render a cube. </p>
 <p>Why, will you ask me? Two reasons, it's fun and it's convenient!</p>
 <p>First, let me thank "msell" for <a href="http://gamedev.stackexchange.com/questions/60313/skyboxes-using-glsl-version-330">the idea</a>.</p>
-<p><img alt="Skybox using a plane" src="http://arntanguy.no-ip.org/images/programmation/opengl/skybox_plane.png" /></p>
+<p><img alt="Skybox using a plane" src="http://arntanguy.github.io/blog/images/programmation/opengl/skybox_plane.png" /></p>
 <p>The result is quite interesting:</p>
 <ul>
 <li>Notice how the center is of perfect resolution? That's because no distortion
@@ -186,7 +186,7 @@ unclear? Leave your comments below. </p>
         <div class="accordion-heading">
             <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
                     data-disqus-identifier="geenux-plane_skybox"
-                href="http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html#disqus_thread">
+                href="http://arntanguy.github.io/blog/creating-a-skybox-from-a-fullscreen-quad.html#disqus_thread">
                 Comments
             </a>
         </div>
@@ -197,7 +197,7 @@ unclear? Leave your comments below. </p>
 <script type="text/javascript">
     var disqus_shortname = 'geenux';
         var disqus_identifier = 'geenux-plane_skybox';
-    var disqus_url = 'http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html';
+    var disqus_url = 'http://arntanguy.github.io/blog/creating-a-skybox-from-a-fullscreen-quad.html';
 
     (function() {
          var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
@@ -222,16 +222,16 @@ unclear? Leave your comments below. </p>
             <h4>Published</h4>
             <time pubdate="pubdate" datetime="2014-01-21T00:00:00+01:00">Jan 21, 2014</time>
             <h4>Category</h4>
-            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#opengl-ref">OpenGL</a>
+            <a class="category-link" href="http://arntanguy.github.io/blog/categories.html#opengl-ref">OpenGL</a>
             <h4>Tags</h4>
             <ul class="list-of-tags tags-in-article">
-                <li><a href="http://arntanguy.no-ip.org/tags.html#glsl-ref">glsl
+                <li><a href="http://arntanguy.github.io/blog/tags.html#glsl-ref">glsl
                     <span>4</span>
 </a></li>
-                <li><a href="http://arntanguy.no-ip.org/tags.html#opengl-ref">opengl
+                <li><a href="http://arntanguy.github.io/blog/tags.html#opengl-ref">opengl
                     <span>3</span>
 </a></li>
-                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                <li><a href="http://arntanguy.github.io/blog/tags.html#programmation-ref">programmation
                     <span>10</span>
 </a></li>
             </ul>

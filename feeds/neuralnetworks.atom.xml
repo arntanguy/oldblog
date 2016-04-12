@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/neuralnetworks.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2014-02-28T00:00:00+01:00</updated><entry><title>Multi-layered Perceptron using OpenCL</title><link href="http://arntanguy.no-ip.org/multi-layered-perceptron-using-opencl.html" rel="alternate"></link><published>2014-02-28T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2014-02-28:multi-layered-perceptron-using-opencl.html</id><summary type="html">&lt;p&gt;I recently discovered &lt;strong&gt;neural networks&lt;/strong&gt;, and I was instantly very interested by the topic. I am a big fan of computer vision, 
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.github.io/blog/" rel="alternate"></link><link href="http://arntanguy.github.io/blog/feeds/neuralnetworks.atom.xml" rel="self"></link><id>http://arntanguy.github.io/blog/</id><updated>2014-02-28T00:00:00+01:00</updated><entry><title>Multi-layered Perceptron using OpenCL</title><link href="http://arntanguy.github.io/blog/multi-layered-perceptron-using-opencl.html" rel="alternate"></link><published>2014-02-28T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.github.io,2014-02-28:blog/multi-layered-perceptron-using-opencl.html</id><summary type="html">&lt;p&gt;I recently discovered &lt;strong&gt;neural networks&lt;/strong&gt;, and I was instantly very interested by the topic. I am a big fan of computer vision, 
 and have always had a feeling that this field was doomed by the sheer amount of possible combinations possible. How could we ever come up with an
 algorithm that wouldn't crash at the first unexpected input? How can we analyse complex behaviour, such as distinguishing distress in a metro when
 so much trivial noise and movements are going on? How could we ever get robots intelligent enough to cope with their environment as well, or even better than
@@ -31,7 +31,7 @@ for it to be able to learn the model). &lt;/p&gt;
 &lt;li&gt;&lt;strong&gt;The output layer&lt;/strong&gt;: composed of one or several neurons. This layer represents the result of the classification, where each neuron represent a specific class. &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Each neuron value in the hidden layers and the output layer is computed as the weighted sum of all the neurons' values linked to it by the weights linking them together.&lt;/p&gt;
-&lt;p&gt;&lt;img alt="Perceptron layers" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron.png" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Perceptron layers" src="http://arntanguy.github.io/blog/images/programmation/neural/perceptron.png" /&gt;&lt;/p&gt;
 &lt;p&gt;Hopefully, neural networks are generally &lt;strong&gt;highly parallel algorithm&lt;/strong&gt;, and the perceptron is probably their king.
 In this article, I will present how to implement a fully-connected perceptron using &lt;strong&gt;OpenCL&lt;/strong&gt;. This article will explain in detail the training algorithm,
 along with its naive implementation. A later article will discuss a faster training algorithm, and optimizations to the kernel presented here. &lt;/p&gt;
@@ -92,7 +92,7 @@ First, let us define some notations:&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;&lt;span class="math"&gt;\(S\)&lt;/span&gt; : Learning set&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;img alt="Notations" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_notation.png" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Notations" src="http://arntanguy.github.io/blog/images/programmation/neural/perceptron_notation.png" /&gt;&lt;/p&gt;
 &lt;p&gt;Before getting deeper into the algorithm, let's just give an overview of what we'll have to do. First, we need to compute the value of every single neuron from the input
 to the output layer. Once we have that, we can compare the output with the expected output, and compute the gradient &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; for the output layer.
 Then, we compute &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; for every layer based on the value of the following layer. This is a process called backpropagation. 
@@ -121,7 +121,7 @@ Finally we update the weight values using the neuron's and &lt;span class="math"
 &lt;/ul&gt;
 &lt;h2 id="note-on-thresholding"&gt;Note on thresholding&lt;a class="headerlink" href="#note-on-thresholding" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
 &lt;p&gt;The values of each layer need to be thresholded. To do so, we add a "virtual neuron", called &lt;em&gt;bias&lt;/em&gt; in each layer, with a fixed value of 1. By updating the associated weights as well, this neuron can be used as an automatic threshold.&lt;/p&gt;
-&lt;p&gt;&lt;img alt="Bias" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_bias.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Bias" src="http://arntanguy.github.io/blog/images/programmation/neural/perceptron_bias.jpg" /&gt;&lt;/p&gt;
 &lt;h1 id="implementation"&gt;Implementation&lt;a class="headerlink" href="#implementation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
 &lt;h2 id="core-structure"&gt;Core structure&lt;a class="headerlink" href="#core-structure" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
 &lt;p&gt;We have to be able to create an arbitrary number of layers, each containing an arbitrary number of neurons.
