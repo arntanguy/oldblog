@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/neuralnetworks.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2014-02-28T00:00:00+01:00</updated><entry><title>Multi-layered Perceptron using OpenCL</title><link href="http://arntanguy.no-ip.org/multi-layered-perceptron-using-opencl.html" rel="alternate"></link><published>2014-02-28T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2014-02-28:multi-layered-perceptron-using-opencl.html</id><summary type="html">&lt;p&gt;I recently discovered &lt;strong&gt;neural networks&lt;/strong&gt;, and I was instantly very interested by the topic. I am a big fan of computer vision, 
+and have always had a feeling that this field was doomed by the sheer amount of possible combinations possible. How could we ever come up with an
+algorithm that wouldn't crash at the first unexpected input? How can we analyse complex behaviour, such as distinguishing distress in a metro when
+so much trivial noise and movements are going on? How could we ever get robots intelligent enough to cope with their environment as well, or even better than
+we do? I believe I'm starting to see a glimmer of hope in neural networks, that we could one day achieve such things, that at the moment seem like a daunting task.
+Of course a perceptron is way too simple a network for such things, but one has to start somewhere, hasn't he?&lt;/p&gt;
+&lt;p&gt;I am convinced that it is utterly useless to read thousands of pages on neural networks to try and understand their behaviour. The best way to approach them
+is by trial and error. In this article, I will show you what a perceptron is, how to implement and train it using &lt;strong&gt;GPU computing with OpenCL&lt;/strong&gt;. &lt;/p&gt;
+&lt;h1 id="what-is-a-perceptron"&gt;What is a perceptron&lt;a class="headerlink" href="#what-is-a-perceptron" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;A perceptron is basically a binary classifier: it will either tell you that the input values you provided match with the model it that has previously
+been learnt, or tell you that they don't. That is for a single output neuron. By providing several outputs, it is possible to use
+the perceptron as a classifier, effectively separating the input set in several classes.&lt;/p&gt;
+&lt;p&gt;So basically, it is a &lt;strong&gt;linear classifier&lt;/strong&gt;. You're probably wondering what you have to gain using a perceptron instead of SVM (Support Vector Machine),
+or similar algorithm. Well, actually not much. The perceptron was discovered before SVM was developped, and since then, SVM has pretty much
+replaced all uses of the perceptron. &lt;/p&gt;
+&lt;p&gt;Even though, the perceptron can be seen as the very basis of neural networks, and is a stepping stone on which one has to
+walk on in order to fully understand the concepts behind neural network algorithms.
+As all neural networks, it requires a great amount of inter-connected neurons to provide enough capacity to learn a given model.
+It is thus a challenge to use a perceptron to accomplish complicated classification in real-time. Also, the training task can be a daunting computation, that might have
+to be ran loads of time before fine-tuning the training to achieve the expected outcome. &lt;/p&gt;
+&lt;p&gt;A fully-connected perceptron is probably the simplest neural network you could ever think of. It is composed of several layers, each containing a given number of neurons.
+Each neuron of a layer is connected to every single neuron of the following layer. Each connection has an associated weight. It is by adjusting these weights that the network will
+tune himself to any linear classification problem, of course given that the network has enough complexity for the given problem (i.e has a sufficient number of neurons and layers 
+for it to be able to learn the model). &lt;/p&gt;
+&lt;p&gt;There are three types of layers:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The input layer&lt;/strong&gt;: it is the first layer, where you set the initial data that your perceptron will be working on.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The hidden layers&lt;/strong&gt;: these are all the layers between the input and output layer. They're basically the ones that will be doing all the work of learning a 
+    model and computing input values against the model in order to classify them.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The output layer&lt;/strong&gt;: composed of one or several neurons. This layer represents the result of the classification, where each neuron represent a specific class. &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Each neuron value in the hidden layers and the output layer is computed as the weighted sum of all the neurons' values linked to it by the weights linking them together.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Perceptron layers" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron.png" /&gt;&lt;/p&gt;
+&lt;p&gt;Hopefully, neural networks are generally &lt;strong&gt;highly parallel algorithm&lt;/strong&gt;, and the perceptron is probably their king.
+In this article, I will present how to implement a fully-connected perceptron using &lt;strong&gt;OpenCL&lt;/strong&gt;. This article will explain in detail the training algorithm,
+along with its naive implementation. A later article will discuss a faster training algorithm, and optimizations to the kernel presented here. &lt;/p&gt;
+&lt;h1 id="training-algorithm-gradient-backpropagation"&gt;Training algorithm : gradient backpropagation&lt;a class="headerlink" href="#training-algorithm-gradient-backpropagation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Training a perceptron is a minimization problem. We define a training set as a set of (input -&amp;gt; output) values.
+The goal of the training is to find the weights that minimize the distance between the output computed by the 
+perceptron on the output corresponding to the same input in the training set.&lt;/p&gt;
+&lt;p&gt;In this article we'll train a perceptron that is able to recognise a &lt;strong&gt;xor&lt;/strong&gt; operation. 
+First of all, here is the xor truth table:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;a&lt;/th&gt;
+&lt;th&gt;b&lt;/th&gt;
+&lt;th&gt;xor(a,b)&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;So the goal of the training will be to find the weights needed for the perceptron to give the correct output for all possible inputs a and b of the 
+truth table.&lt;/p&gt;
+&lt;p&gt;In order to train the weights, we will use an algorithm based on a gradient descent.
+First, let us define some notations:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(n\)&lt;/span&gt;: number of cells in layer, designed by an index &lt;span class="math"&gt;\(i\)&lt;/span&gt; with &lt;span class="math"&gt;\(0 &amp;lt;= i &amp;lt;= n\)&lt;/span&gt; &lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(q\)&lt;/span&gt;: number of layers&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(k\)&lt;/span&gt;: index of an output cell&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(c_k\)&lt;/span&gt;: expected output for output cell k for entry x&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(o_k\)&lt;/span&gt;: computed output for output cell k for entry x&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(x_{ij}\)&lt;/span&gt;: input value associated with link between cell i towards cell j&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(w_{ij}\)&lt;/span&gt;: weight&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Succ(i)&lt;/strong&gt;: set of cells that have the output of cell i as an input &lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Pred(i)&lt;/strong&gt;: set of cells whose output is an input of cell i&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(y_i\)&lt;/span&gt;: weighted sum of cell i &lt;div class="math"&gt;$$y_i = \sum{w_{ij}x_{ij}}$$&lt;/div&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(o_i\)&lt;/span&gt;: output of cell i &lt;div class="math"&gt;$$o_i = \sigma(y_i)$$&lt;/div&gt; where &lt;span class="math"&gt;\(\sigma\)&lt;/span&gt; is the sigmoid function: &lt;div class="math"&gt;$$\sigma(x) = \frac{1}{1+e^{-x}}$$&lt;/div&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;span class="math"&gt;\(S\)&lt;/span&gt; : Learning set&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img alt="Notations" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_notation.png" /&gt;&lt;/p&gt;
+&lt;p&gt;Before getting deeper into the algorithm, let's just give an overview of what we'll have to do. First, we need to compute the value of every single neuron from the input
+to the output layer. Once we have that, we can compare the output with the expected output, and compute the gradient &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; for the output layer.
+Then, we compute &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; for every layer based on the value of the following layer. This is a process called backpropagation. 
+Finally we update the weight values using the neuron's and &lt;span class="math"&gt;\(\delta\)&lt;/span&gt; values previously computed.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The algorithm goes as follow&lt;/strong&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Randomly initialize all weights in interval &lt;span class="math"&gt;\([-0.5, 0.5]\)&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;Repeat until convergence&lt;ul&gt;
+&lt;li&gt;Pick example &lt;span class="math"&gt;\((x, c)\)&lt;/span&gt; in &lt;span class="math"&gt;\(S\)&lt;/span&gt; (x: input value, c: expected output)&lt;/li&gt;
+&lt;li&gt;Compute output &lt;span class="math"&gt;\(o\)&lt;/span&gt; for input &lt;span class="math"&gt;\(x\)&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;For each output cell &lt;span class="math"&gt;\(i\)&lt;/span&gt; (in output layer)&lt;ul&gt;
+&lt;li&gt;Compute &lt;span class="math"&gt;\(\delta_i\)&lt;/span&gt; for each cell of the output layer: &lt;div class="math"&gt;$$\delta_i = \sigma'(y_i)(c_i-o_i) = o_i(1-o_i)(c_i-o_i)$$&lt;/div&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;For each layer from &lt;span class="math"&gt;\(q-1\)&lt;/span&gt; to &lt;span class="math"&gt;\(1\)&lt;/span&gt;&lt;ul&gt;
+&lt;li&gt;Compute &lt;span class="math"&gt;\(\delta_i\)&lt;/span&gt; for each cell of the current layer: &lt;div class="math"&gt;$$\delta_i = \sigma'(y_i)\sum_{k\in\text{Succ(i)}}{\delta_k w_{ki}} = o_i(1-o_i)\sum_{k\in\text{Succ(i)}}{\delta_k w_{ki}}$$&lt;/div&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Update weights: for each weight &lt;span class="math"&gt;\(w_{ij}\)&lt;/span&gt;
+  &lt;div class="math"&gt;$$w_{ij} = w_{ij} + \epsilon \delta_i x_{ij}$$&lt;/div&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="note-on-thresholding"&gt;Note on thresholding&lt;a class="headerlink" href="#note-on-thresholding" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;The values of each layer need to be thresholded. To do so, we add a "virtual neuron", called &lt;em&gt;bias&lt;/em&gt; in each layer, with a fixed value of 1. By updating the associated weights as well, this neuron can be used as an automatic threshold.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Bias" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_bias.jpg" /&gt;&lt;/p&gt;
+&lt;h1 id="implementation"&gt;Implementation&lt;a class="headerlink" href="#implementation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;h2 id="core-structure"&gt;Core structure&lt;a class="headerlink" href="#core-structure" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;We have to be able to create an arbitrary number of layers, each containing an arbitrary number of neurons.
+Each layer must be connected to the following layer for execution, but also to the previous layer for the training
+phase (backpropagation). Thus, the perceptron data structure will be implemented as a double-linked list of layers.&lt;/p&gt;
+&lt;p&gt;Thus, we create two main classes:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PerceptronLayer : represents a layer of the network. Each layer is composed of:&lt;ul&gt;
+&lt;li&gt;an array of neuron values.&lt;/li&gt;
+&lt;li&gt;an array representing the weights from this neuron to all neurons of the next layer.&lt;/li&gt;
+&lt;li&gt;a pointer to the next layer&lt;/li&gt;
+&lt;li&gt;a pointer to the previous layer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Perceptron : manages the creation/removal of layers, training, execution of the network. It only needs to 
+store a pointer to the first and last layers.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="opencl"&gt;OpenCL&lt;a class="headerlink" href="#opencl" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;We are now going to see how this can be implemented using OpenCL. This section depicts a very raw and poorly implemented
+version of the algorithm. It is only meant to be kept simple so that it provides a clear basis onto which further optimisations can be thought of.&lt;/p&gt;
+&lt;p&gt;First, let's start with the execution part of the network.&lt;/p&gt;
+&lt;h3 id="execution"&gt;Execution&lt;a class="headerlink" href="#execution" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The execution is really straightforward. It is just a matter of computing the new value of each neuron based on the weighted sum of all neurons from the previous layer. Thus, the kernel will take as input the weights and values for each input neuron (neurons from the previous layer), and will have as output an array containing the new values of the neurons in the current layer.
+The kernel is thus ran in order on the 2nd, 3rd.... Nth layer.&lt;/p&gt;
+&lt;p&gt;The following kernel can be used to compute the new value for each neuron. Note that it is far from optimal as local memory isn't used at all for the weighted sum!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="cm"&gt;/**&lt;/span&gt;
+&lt;span class="cm"&gt;    * @brief Computes one layer of the perceptron given the previous one and the&lt;/span&gt;
+&lt;span class="cm"&gt;    * weights&lt;/span&gt;
+&lt;span class="cm"&gt;    * The kernel is run once for each layer.&lt;/span&gt;
+&lt;span class="cm"&gt;    * The work items are each tasked with computing the output of a single neuron&lt;/span&gt;
+&lt;span class="cm"&gt;    * of the out layer.&lt;/span&gt;
+&lt;span class="cm"&gt;    *&lt;/span&gt;
+&lt;span class="cm"&gt;    * @param out_layer_size&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Size of the output layer (number of elements in the output array that will&lt;/span&gt;
+&lt;span class="cm"&gt;    *   contain the result for each neuron).&lt;/span&gt;
+&lt;span class="cm"&gt;    * @param in_layer_size&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Number of elements of the input layer&lt;/span&gt;
+&lt;span class="cm"&gt;    * @param in_value&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Values of the neuron in the previous layer&lt;/span&gt;
+&lt;span class="cm"&gt;    * @param in_weights&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Array containing the weights for each input neuron. It is organised as a&lt;/span&gt;
+&lt;span class="cm"&gt;    *   two dimensional matrix, written by concatenating each line in the array&lt;/span&gt;
+&lt;span class="cm"&gt;    *   [ w11, w12, w13, ...&lt;/span&gt;
+&lt;span class="cm"&gt;    *     w21, w22, w23, ...&lt;/span&gt;
+&lt;span class="cm"&gt;    *     ..., ..., ..., ...&lt;/span&gt;
+&lt;span class="cm"&gt;    *   ]&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Where wij is the weight linking the neuron i of the input layer to the&lt;/span&gt;
+&lt;span class="cm"&gt;    *   neuron j of the output layer&lt;/span&gt;
+&lt;span class="cm"&gt;    *   The last weights of each row represent the weights for the &amp;quot;biais neuron&amp;quot;,&lt;/span&gt;
+&lt;span class="cm"&gt;    *   whose role is to threshold the values.&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Thus, this kernel should be run with a NDRange of in_layer_size-1&lt;/span&gt;
+&lt;span class="cm"&gt;    * @param out_values&lt;/span&gt;
+&lt;span class="cm"&gt;    *   Computed values for the current layer&lt;/span&gt;
+&lt;span class="cm"&gt;    */&lt;/span&gt;
+    &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt; &lt;span class="nf"&gt;perceptron&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+            &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;in_layer_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="n"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;in_value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="n"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;in_weights&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+          &lt;span class="n"&gt;global&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;out_values&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_s&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;in_layer_s&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;in_layer_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+        &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sum&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;in_layer_s&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;sum&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;in_weights&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;in_layer_s&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;in_value&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="n"&gt;out_values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sigmoid&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3 id="training"&gt;Training&lt;a class="headerlink" href="#training" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;First, we initialize the weights in range &lt;span class="math"&gt;\([-0.5; 0.5]\)&lt;/span&gt;. This is done on the host side, 
+as random algorithm can be quite tricky to implement efficiently on GPU.&lt;/p&gt;
+&lt;p&gt;All the rest is done in OpenCL. There is a kernel for each step of the algorithm described above.
+It should be fairly easy to understand by reading the code and comments.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;perceptron_train_output_layer&lt;/strong&gt; : forward propagation that computes delta for the output layer&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;perceptron_train_backpropagate&lt;/strong&gt; : backpropagation that computes delta for every single layer&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;perceptron_train_update_weights&lt;/strong&gt; : update the weight based on the previously computed delta-values.&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;perceptron_train_update_weights_intertia&lt;/strong&gt; : another version of the algorithm, updating the weights faster when far from convergence, and getting slower and slower as the convergence zone approaches. This requires however to keep track of the weights from the two previous iterations.&lt;/p&gt;
+&lt;p 1._1.="1./(1." _="+" exp_-x_="exp(-x));
+" return="return"&gt;::opencl
+    float sigmoid(float x)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cm"&gt;/**&lt;/span&gt;
+&lt;span class="cm"&gt; * @brief Computes delta for all of the output neurons.&lt;/span&gt;
+&lt;span class="cm"&gt; * &lt;/span&gt;
+&lt;span class="cm"&gt; * @param values&lt;/span&gt;
+&lt;span class="cm"&gt; *      Values of the output layer&lt;/span&gt;
+&lt;span class="cm"&gt; * @param expected_values&lt;/span&gt;
+&lt;span class="cm"&gt; *      Values expected as output of the perceptron&lt;/span&gt;
+&lt;span class="cm"&gt; * @param delta&lt;/span&gt;
+&lt;span class="cm"&gt; *      Output of the function: computes the delta needed for the training algorithm&lt;/span&gt;
+&lt;span class="cm"&gt; **/&lt;/span&gt;
+&lt;span class="k"&gt;void&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt; &lt;span class="n"&gt;perceptron_train_output_layer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;values&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;expected_values&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ci&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;expected_values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)];&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;oi&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)];&lt;/span&gt;
+    &lt;span class="c1"&gt;// Equivalent to sigmoid&amp;#39;(yi) * (ci-oi)&lt;/span&gt;
+    &lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;oi&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;1&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;oi&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ci&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;oi&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; 
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/**&lt;/span&gt;
+&lt;span class="cm"&gt; * @brief Computes delta for all layers (but the last one) &lt;/span&gt;
+&lt;span class="cm"&gt; * &lt;/span&gt;
+&lt;span class="cm"&gt; * @param curr_size&lt;/span&gt;
+&lt;span class="cm"&gt; *      Size of current layer&lt;/span&gt;
+&lt;span class="cm"&gt; * @param succ_layer_size&lt;/span&gt;
+&lt;span class="cm"&gt; *      Size of the output layer of current layer &lt;/span&gt;
+&lt;span class="cm"&gt; * @param current_layer_values &lt;/span&gt;
+&lt;span class="cm"&gt; *      Values of current layer (calculated during forward propagation)&lt;/span&gt;
+&lt;span class="cm"&gt; * @param weights&lt;/span&gt;
+&lt;span class="cm"&gt; * @param succ_layer_delta_i&lt;/span&gt;
+&lt;span class="cm"&gt; *      Values of delta for the next layer &lt;/span&gt;
+&lt;span class="cm"&gt; **/&lt;/span&gt;
+&lt;span class="k"&gt;void&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt; &lt;span class="n"&gt;perceptron_train_backpropagate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;curr_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;succ_layer_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;current_layer_values&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;succ_layer_delta_i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="c1"&gt;// output&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;current_delta_out&lt;/span&gt;
+        &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;oi&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;current_layer_values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)];&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;succ_size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;succ_layer_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sum&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;succ_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;sum&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;succ_layer_delta_i&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;curr_size&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;current_delta_out&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;oi&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;1&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;oi&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;sum&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/**&lt;/span&gt;
+&lt;span class="cm"&gt; * @brief Update the weights according to values of delta computed during backpropagation&lt;/span&gt;
+&lt;span class="cm"&gt; * &lt;/span&gt;
+&lt;span class="cm"&gt; * @param out_layer_size&lt;/span&gt;
+&lt;span class="cm"&gt; * @param epsilon_value&lt;/span&gt;
+&lt;span class="cm"&gt; *      Parameter controlling the rate of convergence.&lt;/span&gt;
+&lt;span class="cm"&gt; *      epsilon too low will lead to a very slow convergence,&lt;/span&gt;
+&lt;span class="cm"&gt; *      epsilon too high will prevent convergence&lt;/span&gt;
+&lt;span class="cm"&gt; * @param pred_values&lt;/span&gt;
+&lt;span class="cm"&gt; * @param delta&lt;/span&gt;
+&lt;span class="cm"&gt; * @param weights&lt;/span&gt;
+&lt;span class="cm"&gt; **/&lt;/span&gt;
+&lt;span class="k"&gt;void&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt; &lt;span class="n"&gt;perceptron_train_update_weights&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;epsilon_value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;pred_values&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_s&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;pred_values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;out_layer_s&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// XXX to change&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;epsilon_value&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="c1"&gt;// For each weight&lt;/span&gt;
+    &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;out_layer_s&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; 
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/**&lt;/span&gt;
+&lt;span class="cm"&gt; * @brief Update the weights according to values of delta computed during backpropagation&lt;/span&gt;
+&lt;span class="cm"&gt; * Uses the weights computed in the two previous training steps to accelerate convergence.&lt;/span&gt;
+&lt;span class="cm"&gt; * &lt;/span&gt;
+&lt;span class="cm"&gt; * @param out_layer_size&lt;/span&gt;
+&lt;span class="cm"&gt; * @param epsilon_value&lt;/span&gt;
+&lt;span class="cm"&gt; *      Parameter controlling the rate of convergence.&lt;/span&gt;
+&lt;span class="cm"&gt; *      epsilon too low will lead to a very slow convergence,&lt;/span&gt;
+&lt;span class="cm"&gt; *      epsilon too high will prevent convergence&lt;/span&gt;
+&lt;span class="cm"&gt; * @param beta_value&lt;/span&gt;
+&lt;span class="cm"&gt; *      Parameter controlling the non-linear convergence rate&lt;/span&gt;
+&lt;span class="cm"&gt; * @param pred_values&lt;/span&gt;
+&lt;span class="cm"&gt; * @param delta&lt;/span&gt;
+&lt;span class="cm"&gt; * @param previous_weights2&lt;/span&gt;
+&lt;span class="cm"&gt; *        Weights at the k-2 iteration&lt;/span&gt;
+&lt;span class="cm"&gt; * @param weights&lt;/span&gt;
+&lt;span class="cm"&gt; *        As input, weights at the k-1 iteration.&lt;/span&gt;
+&lt;span class="cm"&gt; *        As output, new weight at the k iteration&lt;/span&gt;
+&lt;span class="cm"&gt; **/&lt;/span&gt;
+&lt;span class="k"&gt;void&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt; &lt;span class="n"&gt;perceptron_train_update_weights_inertia&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;epsilon_value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;beta_value&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;pred_values&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;previous_weights2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_global_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="k"&gt;int&lt;/span&gt; &lt;span class="n"&gt;out_layer_s&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;out_layer_size&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;pred_values&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;out_layer_s&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="c1"&gt;// wij(k-1)&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;w1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="c1"&gt;// wij(k-2)&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;w2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;previous_weights2&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// XXX to change&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;epsilon_value&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;private&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="n"&gt;float&lt;/span&gt; &lt;span class="n"&gt;beta&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;beta_value&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="c1"&gt;//printf(&amp;quot;w1-w2: %f\n&amp;quot;, w1-w2);&lt;/span&gt;
+    &lt;span class="c1"&gt;// For each weight&lt;/span&gt;
+    &lt;span class="n"&gt;weights&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;w1&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;epsilon&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;global_id&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;out_layer_s&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;
+                        &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;beta&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;w1&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;w2&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; 
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id="conclusion"&gt;Conclusion&lt;a class="headerlink" href="#conclusion" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;This article showed how to easily create a perceptron neural network using OpenCL. 
+This is one of my first OpenCL projects, and  I'm perfectly aware that this is far from being an optimal 
+code. This article was partly meant as a reminder for myself of how I implemented the perceptron, so that I can
+later on come back to it and improve upon it. The main thing remaining to do would be to make proper use of local memory,
+in order to considerably improve the efficiency of the weighted sums computations. I will describe this in another article later on.&lt;/p&gt;
+&lt;p&gt;The full code is available on my github account &lt;a href="https://github.com/geenux/perceptron"&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I want to thank &lt;a href="http://www.i3s.unice.fr/~fillatre"&gt;Lionel Filatre&lt;/a&gt;, Professor at the University of Polytech'Nice-Sophia
+for his lectures on neural networks. &lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</summary><category term="programmation"></category><category term="opencl"></category><category term="neural networks"></category><category term="perceptron"></category></entry></feed>

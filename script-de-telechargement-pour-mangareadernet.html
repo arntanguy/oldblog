@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="programmation, python, manga, script, Programmation, " />
+        <title>Script de téléchargement pour mangareader.net  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/script-de-telechargement-pour-mangareadernet.html"> Script de téléchargement pour mangareader.net  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>J’ai réalisé un petit script python pour télécharger les mangas depuis le site
+<a href="http://mangareader.net">http://mangareader.net</a>.
+Ce script fonctionne pour tous les mangas que j’ai testé, je suppose qu’il fonctionne pour le reste.
+Le code est un peu sale, gestion des exceptions pas très rigoureuse (si il y a une erreur durant le téléchargement, pas de souci, vous serez prévenu), appel de fonctions qui pourraient être évités…
+Si je suis pas trop flemmard, je modifierai ça plus tard.</p>
+<p>Il n’est probablement pas légal d’utiliser ce script sans être en possession des mangas originaux, pensez à les acheter !</p>
+<p>Le script est sous licence GNU GPL, vous êtes libres de le modifier, l’utiliser comme bon vous semble. Si vous l’améliorez, j’apprécierai d’avoir le nouveau script.</p>
+<p>Utilisation
+Tout d’abord, il faut modifier quelques paramètres dans le script pour l’adapter à vos besoin.
+La variable DL_DIR contient le répertoire dans lequel vous souhaitez stocker les mangas, adaptez la à vos besoin.</p>
+<p>Pour utiliser le script, il suffit de faire</p>
+<div class="highlight"><pre>    mangareader.py <span class="s2">&quot;one piece&quot;</span> 199
+</pre></div>
+
+
+<p>Cette commande télécharge le chapitre 199 de One Piece.</p>
+<div class="highlight"><pre>    mangareader.py <span class="s2">&quot;fairy tail&quot;</span> 1-112
+</pre></div>
+
+
+<p>Cette commande télécharge les chapitres de 1 à 112 de Fairy Tail</p>
+<p>Voici donc le script en question:</p>
+<div class="highlight"><pre>    <span class="c">#!/usr/bin/env python</span>
+    <span class="c"># -*- coding: utf-8 -*-</span>
+    <span class="sd">&quot;&quot;&quot;A small script that downloads mangas from onemanga.com</span>
+<span class="sd">        Licenced under the WTPL Licence&quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">socket</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">import</span> <span class="nn">urllib</span>
+
+    <span class="k">def</span> <span class="nf">helper</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;Gives help about the use of this script&quot;&quot;&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;&quot;&quot;Usage:</span>
+<span class="s">            - python &quot;&quot;&quot;</span><span class="o">+</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&quot;&quot;&quot; manga chapter</span>
+<span class="s">            - python &quot;&quot;&quot;</span><span class="o">+</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&quot;&quot;&quot; manga firstchap-lastchap</span>
+<span class="s">            &quot;&quot;&quot;</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># Config</span>
+    <span class="n">MAXTRIES</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">DL_DIR</span> <span class="o">=</span> <span class="s">&quot;/media/DATA/Mangas/&quot;</span>
+    <span class="n">MANGA_LIST</span> <span class="o">=</span> <span class="s">&quot;http://www.mangareader.net/alphabetical&quot;</span>
+    <span class="n">MANGA_SITE</span> <span class="o">=</span> <span class="s">&quot;http://www.mangareader.net&quot;</span>
+    <span class="n">CHAPTER_NUMBER_LENGTH</span><span class="o">=</span><span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">print_error</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\033</span><span class="s">[31;1m&quot;</span> <span class="o">+</span> <span class="n">text</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\033</span><span class="s">[0m&quot;</span>
+
+    <span class="k">def</span> <span class="nf">print_sucess</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\033</span><span class="s">[32;40m&quot;</span><span class="o">+</span><span class="n">text</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\033</span><span class="s">[0m&quot;</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Download the webpage at the given url&quot;&quot;&quot;</span>
+        <span class="n">tries</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">downloaded</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">while</span> <span class="n">tries</span> <span class="o">&lt;</span> <span class="n">MAXTRIES</span> <span class="ow">and</span> <span class="n">downloaded</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+                <span class="n">downloaded</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">):</span>
+                <span class="n">tries</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Failed download, retrying...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tries</span> <span class="o">==</span> <span class="n">MAXTRIES</span><span class="p">:</span>
+            <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Maximum tries number reached exiting...&quot;</span><span class="p">)</span>
+            <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tries</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">print_sucess</span><span class="p">(</span><span class="s">&quot;Downloaded !&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">retrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">nom</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a file&quot;&quot;&quot;</span>
+        <span class="n">tries</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">downloaded</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">while</span> <span class="n">tries</span> <span class="o">&lt;</span> <span class="n">MAXTRIES</span> <span class="ow">and</span> <span class="n">downloaded</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">nom</span><span class="p">)</span>
+                <span class="n">downloaded</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
+                <span class="n">tries</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">tries</span> <span class="o">==</span> <span class="n">MAXTRIES</span><span class="p">:</span>
+                    <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Maximum tries number reached exiting...&quot;</span><span class="p">)</span>
+                    <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Failed download, retrying...&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tries</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">print_sucess</span><span class="p">(</span><span class="n">nom</span><span class="o">+</span><span class="s">&quot; downloaded.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">make_pretty</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the chain given, in order to have a normal name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;_&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Mangareader</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Manga class.</span>
+<span class="sd">        Contains several attributes related to the manga.</span>
+<span class="sd">        Contains also methods to download its chapters&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">manga</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">manga</span> <span class="o">=</span> <span class="n">manga</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">manga_p</span> <span class="o">=</span> <span class="n">make_pretty</span><span class="p">(</span><span class="n">manga</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="s">&quot;http://mangareader.net/&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nb_image</span><span class="o">=</span><span class="mi">0</span>
+            <span class="c"># Create the download directory</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">DL_DIR</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">DL_DIR</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">DL_DIR</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">manga_p</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">DL_DIR</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">manga_p</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Unable to create the download directory&quot;</span><span class="p">)</span>
+                <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">chap_dir_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns the name of the directory of the chapter.</span>
+<span class="sd">                It is useful in order to organize the mass of chapters.</span>
+<span class="sd">                example:</span>
+<span class="sd">                500 chaps in the manga, directory named &quot;001&quot; instead of &quot;1&quot; &quot;&quot;&quot;</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">CHAPTER_NUMBER_LENGTH</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">num</span><span class="p">))</span><span class="o">*</span><span class="s">&quot;0&quot;</span><span class="o">+</span> <span class="n">num</span>
+
+
+        <span class="k">def</span> <span class="nf">get_chapter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot; Get the images page url list &quot;&quot;&quot;</span>
+            <span class="k">print</span> <span class="s">&quot;Downloading chapter &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">chap_dir_name</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">MANGA_SITE</span><span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">manga</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="n">down</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="c">#print page</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="s">&#39;select&gt; of ([0-9]+).*&lt;&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nb_images</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="c">#print nb_images</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Cannot determine the number of images in this chapter&quot;</span><span class="p">)</span>
+            <span class="c">#&lt;option value=&quot;/103-2057-1/one-piece/chapter-12.html&quot; selected=&quot;selected&quot;&gt;1&lt;/option&gt;</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="s">&#39;&lt;option value=&quot;(.*)&quot;&gt;(.+)&lt;/option&gt;&#39;</span>
+            <span class="n">exp2</span> <span class="o">=</span> <span class="s">&#39;&lt;option value=&quot;(.*)&quot; selected=&quot;selected&quot;&gt;(.+)&lt;/option&gt;&#39;</span>
+
+            <span class="c"># get the link for all pages containing chapter images</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+            <span class="n">images</span><span class="o">=</span><span class="p">[]</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">exp2</span><span class="p">,</span> <span class="n">page</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">print_error</span><span class="p">(</span> <span class="s">&quot;Une page n&#39;a pas été trouvée !&quot;</span><span class="p">)</span>
+
+            <span class="c"># remove the problem with the special case of the current image</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+                <span class="n">el</span><span class="o">=</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">el</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;selected&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+
+            <span class="n">manga_dir</span> <span class="o">=</span> <span class="n">DL_DIR</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">manga_p</span> <span class="o">+</span><span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">chap_dir_name</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">manga_dir</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">manga_dir</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Unable to create the download directory&quot;</span><span class="p">)</span>
+                <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">manga_dir</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_images</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">images_url</span><span class="p">):</span>
+             <span class="c">#&lt;img id=&quot;img&quot; width=&quot;800&quot; height=&quot;1210&quot; src=&quot;http://i28.mangareader.net/one-piece/133/one-piece-1690829.jpg&quot; alt=&quot;One Piece 133 - Page 15&quot; name=&quot;img&quot; /&gt;</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="s">&#39;&lt;img id=.* width=.* height=.* src=&quot;(.*)&quot; alt=.* name=.* /&gt;&#39;</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">images_url</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Parsing page &quot;</span><span class="o">+</span><span class="n">url</span>
+                <span class="n">page</span> <span class="o">=</span> <span class="n">down</span><span class="p">(</span><span class="n">MANGA_SITE</span><span class="o">+</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span><span class="n">page</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Un lien vers une image n&#39;a pas été correctement récupéré!&quot;</span><span class="p">)</span>
+
+            <span class="n">i</span><span class="o">=</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb_images</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;Téléchargement de l&#39;image &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;/&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb_images</span><span class="p">)</span>
+                    <span class="n">retrieve</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">manga_p</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">chap_dir_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                    <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">print_error</span><span class="p">(</span><span class="s">&quot;Le nombre d&#39;images à télécharger est différent du nombre d&#39;images du chapitre ! Tout ne sera pas téléchargé !&quot;</span><span class="p">)</span>
+
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;-h&quot;</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;--help&quot;</span><span class="p">):</span>
+        <span class="n">helper</span><span class="p">()</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">helper</span><span class="p">()</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">==</span><span class="s">&quot;Is there an easter egg in this awesome program ?&quot;</span><span class="p">)):</span>
+        <span class="k">print</span> <span class="s">&quot;     __/~~\-&#39;&#39;- _ |     &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;__- - {            \    &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;     /             \    &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;    /       ;o    o }   &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;    |              ;    &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;                   &#39;    &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;       \_       (..)    &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;         &#39;&#39;-_ _ _ /     &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;           /            &quot;</span>
+        <span class="k">print</span> <span class="s">&quot;          /             &quot;</span>
+
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">Mangareader</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">chap</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">chap</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">chap</span> <span class="o">=</span> <span class="n">chap</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)</span>
+            <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chap</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">chap</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">chap</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                    <span class="n">M</span><span class="o">.</span><span class="n">get_chapter</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">M</span><span class="o">.</span><span class="n">get_chapter</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-script-download-mangareader"
+                href="http://arntanguy.no-ip.org/script-de-telechargement-pour-mangareadernet.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-script-download-mangareader';
+    var disqus_url = 'http://arntanguy.no-ip.org/script-de-telechargement-pour-mangareadernet.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2012-02-05T00:00:00+01:00">Feb 5, 2012</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#programmation-ref">Programmation</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#manga-ref">manga
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                    <span>10</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#python-ref">python
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#script-ref">script
+                    <span>1</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

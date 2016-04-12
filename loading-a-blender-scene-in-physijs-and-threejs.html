@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="programmation, webgl, blender, js, javascript, WebGL, " />
+        <title>Loading a Blender scene in Physijs and Three.js  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/loading-a-blender-scene-in-physijs-and-threejs.html"> Loading a Blender scene in Physijs and Three.js  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <h1 id="la-nuit-de-linfo">La Nuit de l'Info<a class="headerlink" href="#la-nuit-de-linfo" title="Permanent link">&para;</a></h1>
+<p>It is quite interesting to realize the context in which these tools have been
+written. It was all done during an event called "<a href="http://www.nuitdelinfo.com/">La Nuit de l'Info</a>". It is a
+national event held every year in France in which engineers students are competing from sunset to dawn over
+a number of challenges. These challenges spawn an impressive number of
+technologies, ranging from digging up some very old protocols to using some
+mainstream technologies, passing through Django, Javascript, Android, WebGL...
+Well you get the idea, that's a lot of possibilites for just a night!</p>
+<p>Our team ".pyVerts" won 3 challenges, sadly none of them concerns this article
+on WebGL. Nonetheless, what will be presented here might not have been material
+for winning challenges, but certainly did a lot more good than most projects out there: it led to some pretty useful code that could possibly be used by anyone!</p>
+<h1 id="threejs-physijs-and-blender-how-to-fit-them-together">Three.js, Physijs and Blender: How to fit them together?<a class="headerlink" href="#threejs-physijs-and-blender-how-to-fit-them-together" title="Permanent link">&para;</a></h1>
+<ul>
+<li><a href="Three.js">three.js</a> is a really good 3D WebGL engine. It contains most of what
+you need to create a game: shader's support, materials, texture, camera,
+raycasting, and much more.</li>
+<li><a href="http://chandlerprall.github.io/Physijs/">Physijs</a> is a physics engine plugin for Three.js. It is based on the quite famous Bullet Physics engine.</li>
+<li><a href="www.blender.org">Blender</a> is an opensource modelling tool.</li>
+</ul>
+<p>I will present the rest of this article in the same order as the ideas I had
+for the night, so that you can grasp the thought process that led me to write
+    additional tools for Three.js.</p>
+<h1 id="first-step-loading-a-blender-scene-in-threejs">First step: Loading a blender scene in Three.js<a class="headerlink" href="#first-step-loading-a-blender-scene-in-threejs" title="Permanent link">&para;</a></h1>
+<h2 id="install-the-json-export-plugin-for-blender">Install the JSON export plugin for Blender<a class="headerlink" href="#install-the-json-export-plugin-for-blender" title="Permanent link">&para;</a></h2>
+<p>Hopefully, loading a blender scene in Three.js engine is pretty easy. You just
+need to use the JSON exporter for blender along with the JSONLoader from
+Three.js. I will show you a version of that with the addition of the integration of Physijs.</p>
+<p>Here is how to install my version of the blender export plugin:</p>
+<p><strong> Update: </strong> Thanks to some user submissions, the plugin and loading code has been improved. See the updates section at the end of this article to get the newest files. The installation method is the same.</p>
+<ul>
+<li>Download <a href="http://arntanguy.no-ip.org/download/io_mesh_threejs_physijs.tar.gz">the modified exporter for blender 2.69</a></li>
+<li>Untar it in ~/.config/blender/2.69/scripts/addons</li>
+</ul>
+<p>Then go to Blender "User Preferences"-&gt;"Addons", and look for "three" in the
+research bar. Activate it.</p>
+<h2 id="whats-new">What's new<a class="headerlink" href="#whats-new" title="Permanent link">&para;</a></h2>
+<p><img alt="Exporter modification" src="http://arntanguy.no-ip.org/images/programmation/blender/blender_threejs.png" /></p>
+<p>As you can see, in the Mesh panel, there is an additionnal <strong>PHYSICS section</strong>.
+To use it, just select (in object mode) the mesh that you're interested in, and
+set its properties:</p>
+<ul>
+<li>Shape: the physics representation of the object (box, sphere, convex hull...).</li>
+<li>Mass: self-explanatory, set it to 0 if you want a static object</li>
+</ul>
+<h2 id="export-scene">Export scene<a class="headerlink" href="#export-scene" title="Permanent link">&para;</a></h2>
+<p>Select all objects within the scene (including cameras and lights), and click
+on the menu "File-&gt;Export-&gt;Threejs"</p>
+<ul>
+<li>Make sure that "scene" and "camera" are checked!</li>
+</ul>
+<p>That's it, you should now have a JSON scene file that you can use with three.js</p>
+<h1 id="load-scene">Load scene<a class="headerlink" href="#load-scene" title="Permanent link">&para;</a></h1>
+<p>I wrote a modified version of the JSON Loader reading the physics parameters
+from Blender.</p>
+<p>First, <a href="https://raw.github.com/geenux/.jSuisUn.pyVert/master/webgl/libs/PhysicsSceneLoader.js">download this class</a>.
+Now to load a scene, you can look at <a href="https://raw.github.com/geenux/.jSuisUn.pyVert/master/webgl/tests/PhysicsLoader/physics_load_scene.html">this example loader</a></p>
+<p>The interesting part is</p>
+<div class="highlight"><pre>    <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PhysicsSceneLoader</span><span class="p">();</span>
+    <span class="nx">loader</span><span class="p">.</span><span class="nx">callbackProgress</span> <span class="o">=</span> <span class="nx">callbackProgress</span><span class="p">;</span>
+    <span class="nx">loader</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span> <span class="s2">&quot;scene.js&quot;</span><span class="p">,</span> <span class="nx">callbackFinished</span> <span class="p">);</span>
+</pre></div>
+
+
+<p>There is two callback functions.
+You can use this one to show a progress bar</p>
+<div class="highlight"><pre>    <span class="kd">var</span> <span class="nx">callbackProgress</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">progress</span><span class="p">,</span> <span class="nx">result</span> <span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</pre></div>
+
+
+<p>And this one to handle what to do when loading is finished</p>
+<div class="highlight"><pre>    <span class="kd">var</span> <span class="nx">loaded</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="kd">var</span> <span class="nx">callbackFinished</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">result</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">loaded</span> <span class="o">=</span> <span class="nx">result</span>
+        <span class="c1">// Add gravity to the scene</span>
+        <span class="nx">loaded</span><span class="p">.</span><span class="nx">scene</span><span class="p">.</span><span class="nx">setGravity</span><span class="p">(</span><span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Vector3</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">9.8</span><span class="p">,</span> <span class="mi">0</span> <span class="p">));</span>
+        <span class="c1">// Start the physics simulation</span>
+        <span class="nx">scene</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span>
+            <span class="s1">&#39;update&#39;</span><span class="p">,</span>
+            <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="nx">scene</span><span class="p">.</span><span class="nx">simulate</span><span class="p">(</span> <span class="kc">undefined</span><span class="p">,</span> <span class="mi">1</span> <span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<p>The variable <em>loaded</em> now contains all the scene.
+You can use <em>loaded.scene</em> to access the scene object. For instace, if you want
+to render it</p>
+<div class="highlight"><pre>    <span class="nx">renderer</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">loaded</span><span class="p">.</span><span class="nx">scene</span><span class="p">,</span> <span class="nx">loaded</span><span class="p">.</span><span class="nx">camera</span><span class="p">)</span>
+</pre></div>
+
+
+<p>You'll have access to all objects loaded through <em>loaded.objects</em>.</p>
+<p>Well you get the gist of it!</p>
+<h1 id="how-to-improve-the-export-script">How to improve the export script<a class="headerlink" href="#how-to-improve-the-export-script" title="Permanent link">&para;</a></h1>
+<p>The export script is far from complete as far as physics is concerned. So here is the gist of how to improve
+it.</p>
+<p>If you lack properties, you can easily integrate them by following the following steps:</p>
+<p><strong>In export_threejs.py</strong>:</p>
+<ul>
+<li>Modify the <em>TEMPLATE_OBJECT</em> variable</li>
+<li>Modify the <em>object_string</em> in generate_object</li>
+</ul>
+<p><strong>In <strong>init</strong>.py</strong>:</p>
+<p>Define your element at the top of the file Something like</p>
+<div class="highlight"><pre>    <span class="n">bpy</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">Object</span><span class="o">.</span><span class="n">THREE_physicsShape</span> <span class="o">=</span> <span class="n">bpy</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">EnumProperty</span><span class="p">(</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&#39;BoxMesh&#39;</span><span class="p">,</span> <span class="s">&#39;BoxMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Cube-like mesh&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;PlaneMesh&#39;</span><span class="p">,</span> <span class="s">&#39;PlaneMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Plane&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;SphereMesh&#39;</span><span class="p">,</span> <span class="s">&#39;SphereMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Sphere&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;CylinderMesh&#39;</span><span class="p">,</span> <span class="s">&#39;CylinderMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Cylinder&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;ConeMesh&#39;</span><span class="p">,</span> <span class="s">&#39;ConeMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Cone&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;CapsuleMesh&#39;</span><span class="p">,</span> <span class="s">&#39;CapsuleMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Capsule&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;ConvexMesh&#39;</span><span class="p">,</span> <span class="s">&#39;ConvexMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Convex hull of object&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;ConcaveMesh&#39;</span><span class="p">,</span> <span class="s">&#39;ConcaveMesh&#39;</span><span class="p">,</span> <span class="s">&#39;Concave&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;HeightfieldMesh&#39;</span><span class="p">,</span> <span class="s">&#39;HeightfieldMesh&#39;</span><span class="p">,</span> <span class="s">&#39;matches a regular grid of height values given in the z-coordinatesHeightfield&#39;</span><span class="p">)],</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Mesh Type&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Add it to the <em>OBJECT_PT_physics</em> class</p>
+<p><strong>In the engine</strong>, add it to <strong>PhysicsLoader.js</strong>:
+Look for where the Physijs.Mesh are defined, and do the proper changes, that's it, you're all set!</p>
+<h1 id="troubleshoot">Troubleshoot<a class="headerlink" href="#troubleshoot" title="Permanent link">&para;</a></h1>
+<p><em>My physics bounding volume seems way bigger than the real object</em></p>
+<p>There my friend, you probably just encountered one of the most common problems with blender. By default, exporting doesn't apply scale to your mesh, quite stupid ain't it.
+Hopefully it is very easy to solve: select your model in Blender, and then hit Ctrl-A -&gt; Apply Rotation and Scale.
+That's it, you're done ;)</p>
+<h1 id="updates">Updates<a class="headerlink" href="#updates" title="Permanent link">&para;</a></h1>
+<p>Kevin Bikhazi improved upon my plugin. You can find <a href="http://arntanguy.no-ip.org/download/io_mesh_threejs_physijs_update1.tar.gz">the modified exporter for blender 2.69 here</a></p>
+<p>Here is the changelog</p>
+<ul>
+<li>Adds friction and restitution parameters under an object's material tab in Blender. These parameters are very important as they affect how the model interacts with the physics world.</li>
+<li>The Blender add-on has been modified to handle the new material parameters.  Currently the mods only work with standard materials and not with normal mapped materials.  It should be pretty easy to get it to work with normal maps, that might come soon</li>
+<li>PhysicsSceneLoader.js modified to use the new friction and restitution parameters.  </li>
+</ul>
+<p>To install it, just untar, and copy the files to the proper location as specified in the article.</p>
+<h1 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h1>
+<p>It's probably far from the best way of loading physics within three.js: it
+was written during a crazy night of coding! Yet, I hope this helps to give you
+ideas of how to automatically load geometry and physics within your webgl
+application.</p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-loading-blender-threejs"
+                href="http://arntanguy.no-ip.org/loading-a-blender-scene-in-physijs-and-threejs.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-loading-blender-threejs';
+    var disqus_url = 'http://arntanguy.no-ip.org/loading-a-blender-scene-in-physijs-and-threejs.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2013-12-11T00:00:00+01:00">Dec 11, 2013</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#webgl-ref">WebGL</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#blender-ref">blender
+                    <span>2</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#javascript-ref">javascript
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#js-ref">js
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                    <span>10</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#webgl-ref">webgl
+                    <span>1</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

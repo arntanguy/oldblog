@@ -1,0 +1,1195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/programmation.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2013-02-03T00:00:00+01:00</updated><entry><title>ShaderMaker: Fix bug with geometry shaders!</title><link href="http://arntanguy.no-ip.org/shadermaker-fix-bug-with-geometry-shaders.html" rel="alternate"></link><published>2013-02-03T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2013-02-03:shadermaker-fix-bug-with-geometry-shaders.html</id><summary type="html">&lt;p&gt;Hi!&lt;/p&gt;
+&lt;p&gt;I’ve just tried ShaderMaker, which seemed like a great shader editor, and one of the only existing ones that is truly cross-plateform.&lt;/p&gt;
+&lt;p&gt;However, I’m still an unlucky student stuck with an integrated intel chipset, which obviously doesn’t support geometry shaders. Unfortunaly, when I tried editing a fragment shader  I bumped into a nice Segmentation fault!&lt;/p&gt;
+&lt;p&gt;I looked it up online, and the only information I could find was that ShaderMaker crashed whenever geometry shader weren’t supported by the graphics card.&lt;/p&gt;
+&lt;p&gt;Strangely enough, I couldn’t find any patch, despite the number of people complaining about it… So I decided to get my hands dirty, after all, I’m programming a physic engine and a bunch of shaders at the moment, so how hard could it be to fix a segmentation fault?&lt;/p&gt;
+&lt;p&gt;Not hard at all! The bug is a mere problem of indices, that causes the program to look for a non-existing text editor. That’s all.&lt;/p&gt;
+&lt;p&gt;Since I didn’t really have the time to delve into the code, I merely hacked the incriminated index back into behaving itself. It should work for everybody, even lucky possessors of geometry shaders enabled cards (even though they don’t need this fix).&lt;/p&gt;
+&lt;p&gt;So here goes the magick:&lt;/p&gt;
+&lt;p&gt;Download the patched version of the sources from &lt;a href="http://dl.free.fr/jRYRjmwEb"&gt;http://dl.free.fr/jRYRjmwEb&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;And then build it using the usual method:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    qmake -unix ShaderMaker.pro
+    make
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;That’s it, you’re all set and it should work.&lt;/p&gt;
+&lt;p&gt;Just in case, I’m also posting the diff file here&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    diff --git a/src/editwindow.cpp b/src/editwindow.cpp
+    index 703b95a..1da7461 100644
+    --- a/src/editwindow.cpp
+    +++ b/src/editwindow.cpp
+    @@ -320,7 +320,7 @@ createMenus
+    */
+    void CBaseEditWindow::createMenus( IShader* )
+    {
+    - // files
+    + // files
+    m_menuFile = menuBar()-&amp;amp;gt;addMenu( tr( &amp;quot;&amp;amp;amp;File&amp;quot; ) );
+    m_menuFile-&amp;amp;gt;addAction( m_actNew );
+    m_menuFile-&amp;amp;gt;addAction( m_actOpen );
+    @@ -449,7 +449,7 @@ void CSdiEditWindow::uploadShaderSource( IShader* shader )
+    {
+    if( m_attachToShader )
+    {
+    - shader-&amp;amp;gt;setShaderSource( m_document-&amp;amp;gt;shaderType(),
+    + shader-&amp;amp;gt;setShaderSource( m_document-&amp;amp;gt;shaderType(),
+    m_document-&amp;amp;gt;document()-&amp;amp;gt;toPlainText() );
+    }
+    else // disabled by the user
+    @@ -766,7 +766,6 @@ void CMdiEditWindow::createMenus( IShader* shader )
+    m_menuView-&amp;amp;gt;addAction( m_actToSDI );
+    }
+
+    -
+    /*
+    ========================
+    createTabs
+    @@ -777,6 +776,8 @@ void CMdiEditWindow::createTabs( IShader* shader )
+    m_tabs = new QTabWidget();
+
+    // add tabs
+    + qDebug() &amp;amp;lt;&amp;amp;lt; &amp;quot;Creating &amp;quot; &amp;amp;lt;&amp;amp;lt; IShader::MAX_SHADER_TYPES &amp;amp;lt;&amp;amp;lt; &amp;quot; editors\n&amp;quot; ; + m_geometryShaderAvailable = shader-&amp;amp;gt;isShaderTypeAvailable(IShader::TYPE_GEOMETRY);
+    for( int i = 0 ; i &amp;amp;lt; IShader::MAX_SHADER_TYPES ; i++ ) { m_editors[ i ] = NULL; @@ -805,14 +806,26 @@ void CMdiEditWindow::createTabs( IShader* shader ) connect( m_signalMapper, SIGNAL(mapped(int)), m_tabs, SLOT(setCurrentIndex(int)) ); } - /* ======================== positionChanged ======================== +XXX: Contains a hack to fix a bug occuring on low-end graphics card that don&amp;#39;t support +geometry shaders... Tabs index becomes invalid, and thus causes a segfault. +The fix is merely a correction of indices in case geometry shaders aren&amp;#39;t present. +It is not meant to be an optimal fix, I didn&amp;#39;t have time to delve into the code. +This should still work with geometry shaders present, though this is untested. */ void CMdiEditWindow::positionChanged( void ) { - QTextCursor cursor = m_editors[m_tabs-&amp;amp;gt;currentIndex()]-&amp;amp;gt;textCursor();
+    + int index = m_tabs-&amp;amp;gt;currentIndex();
+    + /**
+    + * XXX: Hack to fix geometry shader bug
+    + **/
+    + if(!m_geometryShaderAvailable &amp;amp;amp;&amp;amp;amp; m_tabs-&amp;amp;gt;currentIndex() == 1) {
+    + index = 2;
+    + }
+    + CSourceEdit *edit = m_editors[index];
+    + QTextCursor cursor = edit-&amp;amp;gt;textCursor();
+    int ln = cursor.blockNumber() + 1;
+    int col = cursor.columnNumber() + 1;
+    m_lineNumber-&amp;amp;gt;setText( &amp;quot;Ln: &amp;quot; + QString::number(ln) + &amp;quot; | Col: &amp;quot; + QString::number(col) );
+    @@ -831,7 +844,7 @@ CSourceEdit* CMdiEditWindow::activeDocument( void )
+    // do not type cast. does not hurt, since there are only 3 elements...
+    for( int i = 0 ; i &amp;amp;lt; IShader::MAX_SHADER_TYPES ; i++ )
+    {
+    - if( m_editors[ i ] != NULL &amp;amp;amp;&amp;amp;amp;
+    + if( m_editors[ i ] != NULL &amp;amp;amp;&amp;amp;amp;
+    m_editors[ i ] == widget )
+    {
+    return m_editors[ i ];
+    @@ -854,7 +867,7 @@ int CMdiEditWindow::tabToShader( int tabIndex )
+    // look up the widget... it only take 3 loops...
+    for( int i = 0 ; i &amp;amp;lt; IShader::MAX_SHADER_TYPES ; i++ )
+    {
+    - if( m_editors[ i ] != NULL &amp;amp;amp;&amp;amp;amp;
+    + if( m_editors[ i ] != NULL &amp;amp;amp;&amp;amp;amp;
+    m_editors[ i ] == widget )
+    {
+    return i;
+    diff --git a/src/editwindow.h b/src/editwindow.h
+    index 0a5fc20..33a8a9d 100644
+    --- a/src/editwindow.h
+    +++ b/src/editwindow.h
+    @@ -305,6 +305,7 @@ private:
+    // all documents
+    CSourceEdit** m_editors; // [ IShader::MAX_SHADER_TYPES ]
+    bool* m_attachToShader; // [ IShader::MAX_SHADER_TYPES ]
+    + bool m_geometryShaderAvailable; // XXX: Hack to fix geometry shader bug on low end graphics card
+
+    // actions
+    QAction* m_actNextShader;
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="programmation"></category><category term="shadermaker"></category><category term="bugfix"></category><category term="glsl"></category><category term="shaders"></category><category term="shader editor"></category></entry><entry><title>Configure USB debugging of Android on GNU/Linux</title><link href="http://arntanguy.no-ip.org/configure-usb-debugging-of-android-on-gnulinux.html" rel="alternate"></link><published>2012-02-05T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2012-02-05:configure-usb-debugging-of-android-on-gnulinux.html</id><summary type="html">&lt;p&gt;ShaderMaker's text editor crashed. Indeed, the code tries to load a geometric
+shader while this isn't possible. This article provides the necessary source
+code to fix this issue. 
+disqus_identifier: geenux-usb-debugging-android&lt;/p&gt;
+&lt;p&gt;You want to develop your own application and test it directly your phone instead of the virtual machine? Or perhaps you just want to use some cool features of the SDK to manage your phone? Whatever the reason, here is how to do it.&lt;/p&gt;
+&lt;p&gt;First, I’ll assume that you have already installed the android SDK.&lt;/p&gt;
+&lt;p&gt;The only thing left to do, is to set-up rules for udev. Most articles are happy with giving you a list of devices and Vendor ID. Well, I’m not. These lists are often not exhaustive, and unusual android devices are not represented. There is a really simple way of figuring out this data.
+Simply use the command&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    lsusb
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It will give you a description of all your USB devices, find the one
+corresponding to your device&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    Bus 002 Device 004: ID 04e8:689e Samsung Electronics Co., Ltd
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;All the information you need is in this line : the vendor ID is 04e8, and the device id is 689e (this is a Samsung Galaxy Ace).&lt;/p&gt;
+&lt;p&gt;You just have to declare it to udev:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    sudo vim /etc/udev/rules.d/51-android.rules
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then put a line like:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nv"&gt;SUBSYSTEM&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;usb&amp;quot;&lt;/span&gt;, ATTR&lt;span class="o"&gt;{&lt;/span&gt;idVendor&lt;span class="o"&gt;}==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;04e8&amp;quot;&lt;/span&gt;, , ATTRS&lt;span class="o"&gt;{&lt;/span&gt;idProduct&lt;span class="o"&gt;}==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;689e&amp;quot;&lt;/span&gt;, &lt;span class="nv"&gt;MODE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;0666&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Obviously you need to set your own vendor and device ID here.&lt;/p&gt;
+&lt;p&gt;You’re all set! Next time udev will restart, your device should work!&lt;/p&gt;</summary><category term="programmation"></category><category term="android"></category><category term="linux"></category></entry><entry><title>Script de téléchargement pour mangareader.net</title><link href="http://arntanguy.no-ip.org/script-de-telechargement-pour-mangareadernet.html" rel="alternate"></link><published>2012-02-05T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2012-02-05:script-de-telechargement-pour-mangareadernet.html</id><summary type="html">&lt;p&gt;J’ai réalisé un petit script python pour télécharger les mangas depuis le site
+&lt;a href="http://mangareader.net"&gt;http://mangareader.net&lt;/a&gt;.
+Ce script fonctionne pour tous les mangas que j’ai testé, je suppose qu’il fonctionne pour le reste.
+Le code est un peu sale, gestion des exceptions pas très rigoureuse (si il y a une erreur durant le téléchargement, pas de souci, vous serez prévenu), appel de fonctions qui pourraient être évités…
+Si je suis pas trop flemmard, je modifierai ça plus tard.&lt;/p&gt;
+&lt;p&gt;Il n’est probablement pas légal d’utiliser ce script sans être en possession des mangas originaux, pensez à les acheter !&lt;/p&gt;
+&lt;p&gt;Le script est sous licence GNU GPL, vous êtes libres de le modifier, l’utiliser comme bon vous semble. Si vous l’améliorez, j’apprécierai d’avoir le nouveau script.&lt;/p&gt;
+&lt;p&gt;Utilisation
+Tout d’abord, il faut modifier quelques paramètres dans le script pour l’adapter à vos besoin.
+La variable DL_DIR contient le répertoire dans lequel vous souhaitez stocker les mangas, adaptez la à vos besoin.&lt;/p&gt;
+&lt;p&gt;Pour utiliser le script, il suffit de faire&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    mangareader.py &lt;span class="s2"&gt;&amp;quot;one piece&amp;quot;&lt;/span&gt; 199
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Cette commande télécharge le chapitre 199 de One Piece.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    mangareader.py &lt;span class="s2"&gt;&amp;quot;fairy tail&amp;quot;&lt;/span&gt; 1-112
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Cette commande télécharge les chapitres de 1 à 112 de Fairy Tail&lt;/p&gt;
+&lt;p&gt;Voici donc le script en question:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+    &lt;span class="c"&gt;# -*- coding: utf-8 -*-&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;A small script that downloads mangas from onemanga.com&lt;/span&gt;
+&lt;span class="sd"&gt;        Licenced under the WTPL Licence&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;re&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;socket&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;urllib&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;helper&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Gives help about the use of this script&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot;Usage:&lt;/span&gt;
+&lt;span class="s"&gt;            - python &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot; manga chapter&lt;/span&gt;
+&lt;span class="s"&gt;            - python &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&amp;quot; manga firstchap-lastchap&lt;/span&gt;
+&lt;span class="s"&gt;            &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c"&gt;# Config&lt;/span&gt;
+    &lt;span class="n"&gt;MAXTRIES&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;
+    &lt;span class="n"&gt;DL_DIR&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/media/DATA/Mangas/&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;MANGA_LIST&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://www.mangareader.net/alphabetical&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;MANGA_SITE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://www.mangareader.net&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;CHAPTER_NUMBER_LENGTH&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\033&lt;/span&gt;&lt;span class="s"&gt;[31;1m&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\033&lt;/span&gt;&lt;span class="s"&gt;[0m&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;print_sucess&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\033&lt;/span&gt;&lt;span class="s"&gt;[32;40m&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\033&lt;/span&gt;&lt;span class="s"&gt;[0m&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;down&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Download the webpage at the given url&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;MAXTRIES&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;urllib&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlopen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ne"&gt;IOError&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+                &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Failed download, retrying...&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;MAXTRIES&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Maximum tries number reached exiting...&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;print_sucess&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Downloaded !&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;retrieve&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nom&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Retrieves a file&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;MAXTRIES&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;urllib&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlretrieve&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nom&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="n"&gt;downloaded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ne"&gt;IOError&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;MAXTRIES&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Maximum tries number reached exiting...&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                    &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Failed download, retrying...&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;tries&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;print_sucess&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;nom&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot; downloaded.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;make_pretty&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Returns the chain given, in order to have a normal name&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;capitalize&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;_&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Mangareader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Manga class.&lt;/span&gt;
+&lt;span class="sd"&gt;        Contains several attributes related to the manga.&lt;/span&gt;
+&lt;span class="sd"&gt;        Contains also methods to download its chapters&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;manga&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;manga&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga_p&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;make_pretty&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;manga&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://mangareader.net/&amp;quot;&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nb_image&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="c"&gt;# Create the download directory&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;DL_DIR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                    &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mkdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;DL_DIR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;DL_DIR&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga_p&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                    &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mkdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;DL_DIR&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga_p&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;OSError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Unable to create the download directory&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;chap_dir_name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Returns the name of the directory of the chapter.&lt;/span&gt;
+&lt;span class="sd"&gt;                It is useful in order to organize the mass of chapters.&lt;/span&gt;
+&lt;span class="sd"&gt;                example:&lt;/span&gt;
+&lt;span class="sd"&gt;                500 chaps in the manga, directory named &amp;quot;001&amp;quot; instead of &amp;quot;1&amp;quot; &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+            &lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;CHAPTER_NUMBER_LENGTH&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;0&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;num&lt;/span&gt;
+
+
+        &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_chapter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Get the images page url list &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+            &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Downloading chapter &amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;chap_dir_name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;MANGA_SITE&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;page&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;down&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;read&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="c"&gt;#print page&lt;/span&gt;
+            &lt;span class="n"&gt;exp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;select&amp;gt; of ([0-9]+).*&amp;lt;&amp;#39;&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nb_images&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;re&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;search&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;group&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+                &lt;span class="c"&gt;#print nb_images&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Cannot determine the number of images in this chapter&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="c"&gt;#&amp;lt;option value=&amp;quot;/103-2057-1/one-piece/chapter-12.html&amp;quot; selected=&amp;quot;selected&amp;quot;&amp;gt;1&amp;lt;/option&amp;gt;&lt;/span&gt;
+            &lt;span class="n"&gt;exp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;lt;option value=&amp;quot;(.*)&amp;quot;&amp;gt;(.+)&amp;lt;/option&amp;gt;&amp;#39;&lt;/span&gt;
+            &lt;span class="n"&gt;exp2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;lt;option value=&amp;quot;(.*)&amp;quot; selected=&amp;quot;selected&amp;quot;&amp;gt;(.+)&amp;lt;/option&amp;gt;&amp;#39;&lt;/span&gt;
+
+            &lt;span class="c"&gt;# get the link for all pages containing chapter images&lt;/span&gt;
+            &lt;span class="n"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;re&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;findall&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt;
+
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;re&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;findall&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exp2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Une page n&amp;#39;a pas été trouvée !&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+            &lt;span class="c"&gt;# remove the problem with the special case of the current image&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;img&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;el&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;el&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;selected&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                    &lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;el&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+            &lt;span class="n"&gt;manga_dir&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DL_DIR&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga_p&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;chap_dir_name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;manga_dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                    &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mkdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;manga_dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;OSError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Unable to create the download directory&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;chdir&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;manga_dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_images&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_images&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;images_url&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+             &lt;span class="c"&gt;#&amp;lt;img id=&amp;quot;img&amp;quot; width=&amp;quot;800&amp;quot; height=&amp;quot;1210&amp;quot; src=&amp;quot;http://i28.mangareader.net/one-piece/133/one-piece-1690829.jpg&amp;quot; alt=&amp;quot;One Piece 133 - Page 15&amp;quot; name=&amp;quot;img&amp;quot; /&amp;gt;&lt;/span&gt;
+            &lt;span class="n"&gt;exp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&amp;lt;img id=.* width=.* height=.* src=&amp;quot;(.*)&amp;quot; alt=.* name=.* /&amp;gt;&amp;#39;&lt;/span&gt;
+            &lt;span class="n"&gt;images&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;images_url&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Parsing page &amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;
+                &lt;span class="n"&gt;page&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;down&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;MANGA_SITE&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;read&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="n"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;re&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;findall&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;img&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+                &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Un lien vers une image n&amp;#39;a pas été correctement récupéré!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+            &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;img&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;images&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nb_images&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Téléchargement de l&amp;#39;image &amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;/&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;nb_images&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                    &lt;span class="n"&gt;retrieve&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;img&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;manga_p&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;chap_dir_name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+                    &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;+=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+                &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                    &lt;span class="n"&gt;print_error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Le nombre d&amp;#39;images à télécharger est différent du nombre d&amp;#39;images du chapitre ! Tout ne sera pas téléchargé !&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;-h&amp;quot;&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;--help&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;helper&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;helper&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Is there an easter egg in this awesome program ?&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;     __/~~\-&amp;#39;&amp;#39;- _ |     &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;__- - {            \    &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;     /             \    &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;    /       ;o    o }   &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;    |              ;    &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;                   &amp;#39;    &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;       \_       (..)    &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;         &amp;#39;&amp;#39;-_ _ _ /     &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;           /            &amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;          /             &amp;quot;&lt;/span&gt;
+
+
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;M&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Mangareader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="n"&gt;chap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;chap&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;chap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;chap&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;chap&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;range&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;chap&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;]),&lt;/span&gt;&lt;span class="nb"&gt;int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;chap&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;])):&lt;/span&gt;
+                    &lt;span class="n"&gt;M&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_chapter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;M&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_chapter&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="programmation"></category><category term="python"></category><category term="manga"></category><category term="script"></category></entry><entry><title>Créez Vos Mesh Ogre Sous Blender !</title><link href="http://arntanguy.no-ip.org/creez-vos-mesh-ogre-sous-blender.html" rel="alternate"></link><published>2010-03-04T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2010-03-04:creez-vos-mesh-ogre-sous-blender.html</id><summary type="html">&lt;p&gt;Si vous aimez le logiciel de modélisation 3D Blender, vous serez sans doute ravi de l’utiliser pour créer votre monde dans votre jeu utilisant le moteur Ogre.
+La bonne nouvelle, c’est que c’est d’une simplicité impressionnante, je vais profiter de ce billet pour me faire un petit mémo sur comment faire, ainsi que comment utiliser la technique de l’UV mapping avec Blender (je débute avec la 3D, que ça soit en programmation ou modélisation).&lt;/p&gt;
+&lt;p&gt;L’exemple présenté ici sera fait sur un simple cube, que l’on va texturer, et intégrer dans un projet Ogre.&lt;/p&gt;
+&lt;h1 id="installation-du-script-dexportation-ogre-meshes-exporter"&gt;Installation du script d’exportation OGRE Meshes Exporter&lt;a class="headerlink" href="#installation-du-script-dexportation-ogre-meshes-exporter" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;h2 id="sous-ubuntu"&gt;Sous Ubuntu&lt;a class="headerlink" href="#sous-ubuntu" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Tout d’abord, vous aurez besoin du script d’exportation pour Ogre. Sous Ubuntu pour l’installer, il suffit de faire&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    sudo aptitude install blender-ogrexml
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2 id="sous-une-autre-distribution"&gt;Sous une autre distribution&lt;a class="headerlink" href="#sous-une-autre-distribution" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Si vous avez une autre distribution, voici comment installer le script.&lt;/p&gt;
+&lt;p&gt;Téléchargez &lt;a href="http://www.xullum.net/lefthand/downloads/temp/BlenderExport.zip"&gt;OGRE Meshes Exporter&lt;/a&gt;
+Copiez ogremeshesexporter.py et les sous-dossiers dans &lt;code&gt;~/.blender/scripts&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Note : Vous devez aussi avoir python 2.6.4 installé pour que le script fonctionne.&lt;/p&gt;
+&lt;h1 id="creation-du-cube-et-uv-mapping"&gt;Création du cube et UV mapping&lt;a class="headerlink" href="#creation-du-cube-et-uv-mapping" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;Ouvrez Blender, créez un cube dans une nouvelle scène.&lt;/li&gt;
+&lt;li&gt;Déplacez votre curseur sur la limite supérieure de la zone de modélisation jusqu’à voire une double flèche. Clic droit, puis clic gauche sur Split Area, puis clic gauche pour valider.&lt;/li&gt;
+&lt;li&gt;Maintenant, dans la nouvelle fenêtre créé, passez en mode UV/ImageEditor&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png"&gt;&lt;img alt="Sélection de l'UV
+Mapping" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png" /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Retournez dans la vue 3D, passez en mode editing (touche tab), sélectionnez tout le cube&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Ensuite, faites U -&amp;gt; Unwrap (smart projection).
+Smart projection est souvent la méthode de déroulement donnant les meilleurs résultats.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Faites ensuite Image -&amp;gt; Open (Alt+O) et ouvrez une image de votre choix qui vous servira de texture. Vous pouvez en trouver dans le répertoire OGRE/media/materials/textures…
+Une image apparait alors dans la partie de l’UV mapping. Normallement, les vues planes des faces du cubes devraient coincider avec la taille de l’image, si ce n’est pas le cas, sélectionnez toutes les faces dans la partie UV (touche A) puis redimensionnez les en utilisant la touche s.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;On obtient&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png"&gt;&lt;img alt="Dépliage du Cube" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png" /&gt;&lt;/a&gt;
+&lt;a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor3.png"&gt;&lt;img alt="Résultat" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor3.png" /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Allez dans la vue 3D, et faites Alt+Z pour passer en mode texturé. Normalement vous devriez voir la texture.&lt;/li&gt;
+&lt;li&gt;Il ne reste plus qu’à assigner un matériau au cube, et à exporter.
+Ouvrez le panneau Shading (F5), puis créez un nouveau matériau.
+Cliquez sur Tex Face.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="exportation"&gt;Exportation&lt;a class="headerlink" href="#exportation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Faites Fichier-&amp;gt;Exporter-&amp;gt;Ogre Meshes.
+Là, vous avez la fenêtre du bas qui se modifie. Cliquez sur « Game Engine Materials » et « OgreXMLConverter ». Le fait de sélectionner OgreXMLConverter appellera automatiquement le programme d’Ogre du même nom qui est chargé de convertir le fichier XML du mesh en des fichiers de mesh que le moteur comprend.
+Cliquez sur « Exporter ».&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/export.png"&gt;&lt;img alt="Export" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/export.png" /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Sublime, magnifique, perfect, vous venez de créer votre premier Mesh pour OGRE. Mais comment l’utiliser maintenant ? Suivez le guide.&lt;/p&gt;
+&lt;h1 id="utiliser-le-mesh-dans-ogre"&gt;Utiliser le mesh dans OGRE&lt;a class="headerlink" href="#utiliser-le-mesh-dans-ogre" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Dans cette partie, je supposerai que vous connaissez au moins les bases de OGRE, c’est à dire les premiers tutoriels du wiki officiel, au moins jusqu’à la partie permettant de charger un mesh.&lt;/p&gt;
+&lt;p&gt;Tout d’abord, il va falloir placer les fichiers où il faut, c’est à dire… où vous voulez. Je vous conseille néamoins de respecter la structure habituelle de OGRE, c’est à dire&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;Ogre&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;un&lt;/span&gt; &lt;span class="n"&gt;dossier&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;lequel&lt;/span&gt; &lt;span class="n"&gt;vous&lt;/span&gt; &lt;span class="n"&gt;placerez&lt;/span&gt; &lt;span class="n"&gt;vos&lt;/span&gt; &lt;span class="n"&gt;mesh&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;exemple&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;de&lt;/span&gt; &lt;span class="n"&gt;votre&lt;/span&gt; &lt;span class="n"&gt;jeu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;o&lt;/span&gt;&lt;span class="err"&gt;ù&lt;/span&gt; &lt;span class="n"&gt;ailleurs&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+    &lt;span class="err"&gt;—&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;models&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;vous&lt;/span&gt; &lt;span class="n"&gt;placerez&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;ce&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;fichier&lt;/span&gt; &lt;span class="n"&gt;Cube&lt;/span&gt;&lt;span class="mf"&gt;.001&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mesh&lt;/span&gt; &lt;span class="n"&gt;qui&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;script&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;exportation&lt;/span&gt;
+    &lt;span class="err"&gt;—&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;materials&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;ce&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;contient&lt;/span&gt; &lt;span class="n"&gt;les&lt;/span&gt; &lt;span class="n"&gt;textures&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;scripts&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;enfin&lt;/span&gt; &lt;span class="n"&gt;bref&lt;/span&gt; &lt;span class="n"&gt;infos&lt;/span&gt; &lt;span class="n"&gt;sur&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;apparence&lt;/span&gt;
+    &lt;span class="err"&gt;———&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;textures&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;placez&lt;/span&gt; &lt;span class="n"&gt;ici&lt;/span&gt; &lt;span class="n"&gt;votre&lt;/span&gt; &lt;span class="n"&gt;texture&lt;/span&gt;
+    &lt;span class="err"&gt;———&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;scripts&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;placez&lt;/span&gt; &lt;span class="n"&gt;ici&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;fichier&lt;/span&gt; &lt;span class="n"&gt;Scene&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;material&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;exportation&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Maintenant, il va falloir dire à Ogre où trouver les fichiers. Pour celà, modifiez le fichier ressource.cfg comme suitDans cette partie, je supposerai que vous connaissez au moins les bases de OGRE, c’est à dire les premiers tutoriels du wiki officiel, au moins jusqu’à la partie permettant de charger un mesh.&lt;/p&gt;
+&lt;p&gt;Tout d’abord, il va falloir placer les fichiers où il faut, c’est à dire… où vous voulez. Je vous conseille néamoins de respecter la structure habituelle de OGRE, c’est à dire&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;Ogre&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;un&lt;/span&gt; &lt;span class="n"&gt;dossier&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;lequel&lt;/span&gt; &lt;span class="n"&gt;vous&lt;/span&gt; &lt;span class="n"&gt;placerez&lt;/span&gt; &lt;span class="n"&gt;vos&lt;/span&gt; &lt;span class="n"&gt;mesh&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;exemple&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;de&lt;/span&gt; &lt;span class="n"&gt;votre&lt;/span&gt; &lt;span class="n"&gt;jeu&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;o&lt;/span&gt;&lt;span class="err"&gt;ù&lt;/span&gt; &lt;span class="n"&gt;ailleurs&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+    &lt;span class="err"&gt;—&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;models&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;vous&lt;/span&gt; &lt;span class="n"&gt;placerez&lt;/span&gt; &lt;span class="n"&gt;dans&lt;/span&gt; &lt;span class="n"&gt;ce&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;fichier&lt;/span&gt; &lt;span class="n"&gt;Cube&lt;/span&gt;&lt;span class="mf"&gt;.001&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;mesh&lt;/span&gt; &lt;span class="n"&gt;qui&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;script&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;exportation&lt;/span&gt;
+    &lt;span class="err"&gt;—&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;materials&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;ce&lt;/span&gt; &lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;pertoire&lt;/span&gt; &lt;span class="n"&gt;contient&lt;/span&gt; &lt;span class="n"&gt;les&lt;/span&gt; &lt;span class="n"&gt;textures&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;scripts&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;enfin&lt;/span&gt; &lt;span class="n"&gt;bref&lt;/span&gt; &lt;span class="n"&gt;infos&lt;/span&gt; &lt;span class="n"&gt;sur&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;apparence&lt;/span&gt;
+    &lt;span class="err"&gt;———&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;textures&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;placez&lt;/span&gt; &lt;span class="n"&gt;ici&lt;/span&gt; &lt;span class="n"&gt;votre&lt;/span&gt; &lt;span class="n"&gt;texture&lt;/span&gt;
+    &lt;span class="err"&gt;———&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;scripts&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;placez&lt;/span&gt; &lt;span class="n"&gt;ici&lt;/span&gt; &lt;span class="n"&gt;le&lt;/span&gt; &lt;span class="n"&gt;fichier&lt;/span&gt; &lt;span class="n"&gt;Scene&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;material&lt;/span&gt; &lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;n&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="err"&gt;é&lt;/span&gt; &lt;span class="n"&gt;par&lt;/span&gt; &lt;span class="n"&gt;l&lt;/span&gt;&lt;span class="err"&gt;’&lt;/span&gt;&lt;span class="n"&gt;exportation&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Maintenant, il va falloir dire à Ogre où trouver les fichiers. Pour celà, modifiez le fichier ressource.cfg comme suit&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="c1"&gt;# Resources required by the sample browser and most samples.&lt;/span&gt;
+    &lt;span class="k"&gt;[Essential]&lt;/span&gt;
+    &lt;span class="na"&gt;Zip&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;/usr/share/OGRE/media/packs/SdkTrays.zip&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/thumbnails&lt;/span&gt;
+
+    &lt;span class="c1"&gt;# Common sample resources needed by many of the samples.&lt;/span&gt;
+    &lt;span class="c1"&gt;# Rarely used resources should be separately loaded by the&lt;/span&gt;
+    &lt;span class="c1"&gt;# samples which require them.&lt;/span&gt;
+    &lt;span class="k"&gt;[Popular]&lt;/span&gt;
+    &lt;span class="na"&gt;FileSystem&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;/usr/share/OGRE/media/fonts&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/materials/programs&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/materials/scripts&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/materials/textures&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/materials/textures/nvidia&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/models&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/particle&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/DeferredShadingMedia&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/PCZAppMedia&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/usr/share/OGRE/media/RTShaderLib&lt;/span&gt;
+
+    &lt;span class="c1"&gt;# MODIFIEZ ICI : mettez le chemin des répertoires que vous venez de créer&lt;/span&gt;
+    &lt;span class="na"&gt;FileSystem&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;/media/data/programmation/3D/ogre/media/materials/scripts&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/media/data/programmation/3D/ogre/media/materials/textures&lt;/span&gt;
+&lt;span class="s"&gt;    FileSystem=/media/data/programmation/3D/ogre/media/models&lt;/span&gt;
+
+    &lt;span class="na"&gt;Zip&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;/usr/share/OGRE/media/packs/cubemap.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/cubemapsJS.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/dragon.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/fresneldemo.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/ogretestmap.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/ogredance.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/Sinbad.zip&lt;/span&gt;
+&lt;span class="s"&gt;    Zip=/usr/share/OGRE/media/packs/skybox.zip&lt;/span&gt;
+
+    &lt;span class="k"&gt;[General]&lt;/span&gt;
+    &lt;span class="na"&gt;FileSystem&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;/usr/share/OGRE/media&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Plus qu’à tester ça sur un exemple, prenons celui du wiki officiel :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;ExampleApplication.h&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;TutorialApplication&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="k"&gt;public&lt;/span&gt; &lt;span class="n"&gt;ExampleApplication&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;protected:&lt;/span&gt;
+    &lt;span class="nl"&gt;public:&lt;/span&gt;
+        &lt;span class="n"&gt;TutorialApplication&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+        &lt;span class="o"&gt;~&lt;/span&gt;&lt;span class="n"&gt;TutorialApplication&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="nl"&gt;protected:&lt;/span&gt;
+        &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="n"&gt;createScene&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;mSceneMgr&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;setAmbientLight&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;ColourValue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;);&lt;/span&gt;
+            &lt;span class="n"&gt;Entity&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;ent1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;mSceneMgr&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;createEntity&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Test&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;Cube.001.mesh&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;);&lt;/span&gt;
+            &lt;span class="n"&gt;SceneNode&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;node1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;mSceneMgr&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;getRootSceneNode&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;createChildSceneNode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;TestNode&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;);&lt;/span&gt;
+            &lt;span class="n"&gt;node1&lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;attachObject&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;ent1&lt;/span&gt; &lt;span class="p"&gt;);&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;};&lt;/span&gt;
+
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;OGRE_PLATFORM&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;OGRE_PLATFORM_WIN32&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="n"&gt;define&lt;/span&gt; &lt;span class="n"&gt;WIN32_LEAN_AND_MEAN&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;windows.h&amp;quot;&lt;/span&gt;
+
+    &lt;span class="n"&gt;INT&lt;/span&gt; &lt;span class="n"&gt;WINAPI&lt;/span&gt; &lt;span class="n"&gt;WinMain&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;HINSTANCE&lt;/span&gt; &lt;span class="n"&gt;hInst&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;HINSTANCE&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;LPSTR&lt;/span&gt; &lt;span class="n"&gt;strCmdLine&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;INT&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;argc&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="n"&gt;endif&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="c1"&gt;// Create application object&lt;/span&gt;
+        &lt;span class="n"&gt;TutorialApplication&lt;/span&gt; &lt;span class="n"&gt;app&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+        &lt;span class="n"&gt;try&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;app&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;go&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;catch&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="n"&gt;Exception&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;OGRE_PLATFORM&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;OGRE_PLATFORM_WIN32&lt;/span&gt;
+            &lt;span class="n"&gt;MessageBox&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="nb"&gt;NULL&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;what&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;An exception has occurred!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;MB_OK&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;MB_ICONERROR&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;MB_TASKMODAL&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;
+            &lt;span class="n"&gt;fprintf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stderr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;An exception has occurred: %s&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;what&lt;/span&gt;&lt;span class="p"&gt;());&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="n"&gt;endif&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Voilà, plus qu’à compiler, et à lancer le programme. Normallement, sous vos yeux ébahis, le cube apparait, texturé tout comme il faut.&lt;/p&gt;
+&lt;h1 id="problemes"&gt;Problèmes&lt;a class="headerlink" href="#problemes" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Voici quelques problèmes que j’ai rencontré, et comment les éviter :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Si l’application ne démarre pas, vous avez probablement oublié de placer le fichier mesh Cube.001.mesh dans votre répertoire models/, ou alors vous n’avez pas spécifié correctement sa position dans le fichier ressources.cfg&lt;/li&gt;
+&lt;li&gt;Si le cube n’est pas texturé, vérifiez que vous avez bien un fichier Scene.material dans votre dossier script, et que son emplacement est correctement spécifié dans le fichier ressources.cfg&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Amusez vous bien, et si je n’ai pas été clair, n’hésitez pas à demander des précisions dans les commentaires.&lt;/p&gt;</summary><category term="blender"></category><category term="ogre3D"></category><category term="3D"></category></entry><entry><title>Using CMake</title><link href="http://arntanguy.no-ip.org/using-cmake.html" rel="alternate"></link><published>2009-12-27T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2009-12-27:using-cmake.html</id><summary type="html">&lt;p&gt;Je me souviens encore des premier projets pour lesquels j’ai tenté de comprendre comment utiliser cmake pour créer les makefiles.  La doc est tout sauf claire, et le manque de tutoriels sur la base du fonctionnement de cmake manque cruellement. Je vais tâcher de remédier à ce souci, en expliquant comment compiler des projets simples avec cmake.&lt;/p&gt;
+&lt;h1 id="quest-ce-que-cmake"&gt;Qu’est-ce que cmake ?&lt;a class="headerlink" href="#quest-ce-que-cmake" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Il s’agit d’un outil permettant de ne pas avoir à écrire les Makefiles à la main. Il permet de rechercher automatiquement les librairies sur le systèmes, de régler les compilation en statique ou dynamique, de compiler aisément à partir d’un dossier séparé. C’est un réel plus pour la portabilité (cmake fonctionne sur de nombreux systèmes, et la plupart des modules peuvent trouver les lib aussi bien sous Windows, que GNU/Linux…).&lt;/p&gt;
+&lt;p&gt;Cmake permet de vous affranchir de la syntaxe immonde des makefiles, et de vous contenter de décrire la manière de compilation de votre programme, de conditionner la compilation…&lt;/p&gt;
+&lt;h1 id="un-cmake-minimal"&gt;Un cmake minimal.&lt;a class="headerlink" href="#un-cmake-minimal" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Tout d’abord, voici un exemple de CMakeFile.txt (c’est le fichier que cmake lit pour le convertir en makefile) permettant de compiler avec Boost.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;cmake_minimum_required&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;VERSION&lt;/span&gt; &lt;span class="s"&gt;2.6&lt;/span&gt; &lt;span class="s"&gt;FATAL_ERROR&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c"&gt;# search for Boost version 1.40&lt;/span&gt;
+    &lt;span class="c"&gt;# Components :&lt;/span&gt;
+    &lt;span class="c"&gt;#filesystem, iostreams, programoptions, python, regex, serialization, signals&lt;/span&gt;
+    &lt;span class="c"&gt;#system, thread, wave&lt;/span&gt;
+    &lt;span class="nb"&gt;find_package&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;Boost&lt;/span&gt; &lt;span class="s"&gt;1.40.0&lt;/span&gt; &lt;span class="s"&gt;COMPONENTS&lt;/span&gt; &lt;span class="s"&gt;regex&lt;/span&gt; &lt;span class="s"&gt;signals&lt;/span&gt; &lt;span class="s"&gt;FATAL_ERROR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;link_directories&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_LIBRARY_DIRS&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;include_directories&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_INCLUDE_DIRS&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="nb"&gt;SET&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;SOURCES&lt;/span&gt;
+    &lt;span class="s"&gt;main.cpp&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="nb"&gt;SET&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;EXECUTABLE_NAME&lt;/span&gt;
+    &lt;span class="s"&gt;executable&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="nb"&gt;add_executable&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;EXECUTABLE_NAME&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+    &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;SOURCES&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="nb"&gt;target_link_libraries&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;EXECUTABLE_NAME&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+    &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_LIBRARIES&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Comme vous pouvez le constater dans cet exemple, cmake gère les variables, et sa syntaxe est assez simple. Étudions plus en détail ce fichier.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;cmake_minimum_required&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;VERSION&lt;/span&gt; &lt;span class="s"&gt;2.6&lt;/span&gt; &lt;span class="s"&gt;FATAL_ERROR&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Cette ligne indique qu’il faut avoir la version 2.6 de cmake pour compiler, le FATAL_ERROR est facultatif, il indique à cmake de ne pas essayer de compiler et de stopper tout de suite.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;find_package&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;Boost&lt;/span&gt; &lt;span class="s"&gt;1.40.0&lt;/span&gt; &lt;span class="s"&gt;COMPONENTS&lt;/span&gt; &lt;span class="s"&gt;regex&lt;/span&gt; &lt;span class="s"&gt;signals&lt;/span&gt; &lt;span class="s"&gt;FATAL_ERROR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Il s’agit d’une des fonctionnalités les plus intéressantes de cmake : la recherche des librairies. La fonctionnalité find_package va chercher un fichier (appelé module), permettant de rechercher la lib voulue nommée FindBoost.cmake. Chez moi ce fichier est dans "/usr/share/cmake-2.6/Modules/FindBoost.cmake".
+(si vous ne le trouvez pas, un simple &lt;code&gt;locate FindBoost.cmake&lt;/code&gt; devrait le trouver).
+Pourquoi je vous indique ces détails sur le fichier ? Eh bien, parceque la lecture du fichier en question va vous fournir une mine d’information sur ce qu’il fait, quelles variables il définit, bref comment l’exploiter.
+Voici quelques extraits du header de ce fichier :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="c"&gt;# - Try to find Boost include dirs and libraries&lt;/span&gt;
+    &lt;span class="c"&gt;# Usage of this module as follows:&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# == Using Header-Only libraries from within Boost: ==&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   find_package( Boost 1.36.0 )&lt;/span&gt;
+    &lt;span class="c"&gt;#   if(Boost_FOUND)&lt;/span&gt;
+    &lt;span class="c"&gt;#      include_directories(${Boost_INCLUDE_DIRS})&lt;/span&gt;
+    &lt;span class="c"&gt;#      add_executable(foo foo.cc)&lt;/span&gt;
+    &lt;span class="c"&gt;#   endif()&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# == Using actual libraries from within Boost: ==&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   set(Boost_USE_STATIC_LIBS   ON)&lt;/span&gt;
+    &lt;span class="c"&gt;#   set(Boost_USE_MULTITHREADED ON)&lt;/span&gt;
+    &lt;span class="c"&gt;#   find_package( Boost 1.36.0 COMPONENTS date_time filesystem system ... )&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   if(Boost_FOUND)&lt;/span&gt;
+    &lt;span class="c"&gt;#      include_directories(${Boost_INCLUDE_DIRS})&lt;/span&gt;
+    &lt;span class="c"&gt;#      add_executable(foo foo.cc)&lt;/span&gt;
+    &lt;span class="c"&gt;#      target_link_libraries(foo ${Boost_LIBRARIES})&lt;/span&gt;
+    &lt;span class="c"&gt;#   endif()&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# The components list needs to contain actual names of boost libraries only,&lt;/span&gt;
+    &lt;span class="c"&gt;# such as &amp;quot;date_time&amp;quot; for &amp;quot;libboost_date_time&amp;quot;.  If you&amp;#39;re using parts of&lt;/span&gt;
+    &lt;span class="c"&gt;# Boost that contain header files only (e.g. foreach) you do not need to&lt;/span&gt;
+    &lt;span class="c"&gt;# specify COMPONENTS.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# You should provide a minimum version number that should be used. If you provide this&lt;/span&gt;
+    &lt;span class="c"&gt;# version number and specify the REQUIRED attribute, this module will fail if it&lt;/span&gt;
+    &lt;span class="c"&gt;# can&amp;#39;t find the specified or a later version. If you specify a version number this is&lt;/span&gt;
+    &lt;span class="c"&gt;# automatically put into the considered list of version numbers and thus doesn&amp;#39;t need&lt;/span&gt;
+    &lt;span class="c"&gt;# to be specified in the Boost_ADDITIONAL_VERSIONS variable (see below).&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# NOTE for Visual Studio Users:&lt;/span&gt;
+    &lt;span class="c"&gt;#     Automatic linking is used on MSVC &amp;amp;amp; Borland compilers by default when&lt;/span&gt;
+    &lt;span class="c"&gt;#     #including things in Boost.  It&amp;#39;s important to note that setting&lt;/span&gt;
+    &lt;span class="c"&gt;#     Boost_USE_STATIC_LIBS to OFF is NOT enough to get you dynamic linking,&lt;/span&gt;
+    &lt;span class="c"&gt;#     should you need this feature.  Automatic linking typically uses static&lt;/span&gt;
+    &lt;span class="c"&gt;#     libraries with a few exceptions (Boost.Python is one).&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#     Please see the section below near Boost_LIB_DIAGNOSTIC_DEFINITIONS for&lt;/span&gt;
+    &lt;span class="c"&gt;#     more details.  Adding a TARGET_LINK_LIBRARIES() as shown in the example&lt;/span&gt;
+    &lt;span class="c"&gt;#     above appears to cause VS to link dynamically if Boost_USE_STATIC_LIBS&lt;/span&gt;
+    &lt;span class="c"&gt;#     gets set to OFF.  It is suggested you avoid automatic linking since it&lt;/span&gt;
+    &lt;span class="c"&gt;#     will make your application less portable.&lt;/span&gt;
+    &lt;span class="err"&gt;[...]&lt;/span&gt;
+    &lt;span class="c"&gt;# Variables used by this module, they can change the default behaviour and&lt;/span&gt;
+    &lt;span class="c"&gt;# need to be set before calling find_package:&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_USE_MULTITHREADED      Can be set to OFF to use the non-multithreaded&lt;/span&gt;
+    &lt;span class="c"&gt;#                                boost libraries.  If not specified, defaults&lt;/span&gt;
+    &lt;span class="c"&gt;#                                to ON.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_USE_STATIC_LIBS        Can be set to ON to force the use of the static&lt;/span&gt;
+    &lt;span class="c"&gt;#                                boost libraries. Defaults to OFF.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;# Other Variables used by this module which you may want to set.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_ADDITIONAL_VERSIONS    A list of version numbers to use for searching&lt;/span&gt;
+    &lt;span class="c"&gt;#                                the boost include directory.  Please see&lt;/span&gt;
+    &lt;span class="c"&gt;#                                the documentation above regarding this&lt;/span&gt;
+    &lt;span class="c"&gt;#                                annoying, but necessary variable &amp;lt;img src=&amp;quot;http://s0.wp.com/wp-includes/images/smilies/icon_sad.gif?m=1129645325g&amp;quot; alt=&amp;quot;:(&amp;quot; class=&amp;quot;wp-smiley&amp;quot;&amp;gt; &lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="err"&gt;[...]&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_INCLUDE_DIRS                  Boost include directories: not cached&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_INCLUDE_DIR                   This is almost the same as above, but this one is&lt;/span&gt;
+    &lt;span class="c"&gt;#                                       cached and may be modified by advanced users&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_LIBRARIES                     Link to these to use the Boost libraries that you&lt;/span&gt;
+    &lt;span class="c"&gt;#                                       specified: not cached&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_LIBRARY_DIRS                  The path to where the Boost library files are.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_VERSION                       The version number of the boost libraries that&lt;/span&gt;
+    &lt;span class="c"&gt;#                                       have been found, same as in version.hpp from Boost&lt;/span&gt;
+    &lt;span class="err"&gt;[...]&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_${COMPONENT}_FOUND            True IF the Boost library &amp;quot;component&amp;quot; was found.&lt;/span&gt;
+    &lt;span class="err"&gt;#&lt;/span&gt;
+    &lt;span class="c"&gt;#   Boost_${COMPONENT}_LIBRARY          Contains the libraries for the specified Boost&lt;/span&gt;
+    &lt;span class="c"&gt;#                                       &amp;quot;component&amp;quot; (includes debug and optimized keywords&lt;/span&gt;
+    &lt;span class="c"&gt;#                                       when needed).&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Grâce aux informations contenues ici, on pourra facilement construite un CMakeFile adapté à nos besoins.
+Revenons à l’exemple :
+find_package va utiliser le fichier indiqué plus haut pour rechercher boost, le module va définir de nombreuses variable (comme on voit dans le header ci-dessus), que l’on va utiliser pour la compilation.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;find_package&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s"&gt;Boost&lt;/span&gt; &lt;span class="s"&gt;1.40.0&lt;/span&gt; &lt;span class="s"&gt;COMPONENTS&lt;/span&gt; &lt;span class="s"&gt;regex&lt;/span&gt; &lt;span class="s"&gt;signals&lt;/span&gt; &lt;span class="s"&gt;FATAL_ERROR&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;link_directories&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_LIBRARY_DIRS&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;include_directories&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_INCLUDE_DIRS&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;k&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;La ligne link_directories indique que cmake devra lier l’exécutable avec la librairie boost, ${Boost_LIBRARY_DIRS} étant une variable définie par le module appelé par find_package.
+La ligne include_directories fait de même pour le répertoire dans lequel les includes de boost sont.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;SET&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;SOURCES&lt;/span&gt; &lt;span class="s"&gt;main.cpp&lt;/span&gt; &lt;span class="s"&gt;autre.cpp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;SET&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;EXECUTABLE_NAME&lt;/span&gt; &lt;span class="s"&gt;executable&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;On définit 2 variables SOURCES et EXECUTABLE_NAME, comme ça on aura juste à modifier à un seul endroit, et tout le reste sera modifié en conséquence.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nb"&gt;add_executable&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;EXECUTABLE_NAME&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;SOURCES&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nb"&gt;target_link_libraries&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;EXECUTABLE_NAME&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt; &lt;span class="o"&gt;${&lt;/span&gt;&lt;span class="nv"&gt;Boost_LIBRARIES&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;add_executable indique à cmake qu’il faut compiler les sources contenues dans la variable SOURCE et créer un exécutable nommé par le nom défini dans la variable EXECUTABLE_NAME
+target_link_libraries indique à cmake avec quelles librairies il doit lier.&lt;/p&gt;
+&lt;p&gt;Et voilà, vous avez un CMakeList pour compiler avec boost.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    mkdir build &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="nb"&gt;cd &lt;/span&gt;build
+    cmake ..
+    make
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Et voilà, les sources sont compilés dans le dossier build.&lt;/p&gt;</summary><category term="fotowall"></category></entry><entry><title>VIM : My configuration</title><link href="http://arntanguy.no-ip.org/vim-my-configuration.html" rel="alternate"></link><published>2009-12-23T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2009-12-23:vim-my-configuration.html</id><summary type="html">&lt;p&gt;Tant qu’à m’être fait un vim qui me convient à peu près, je me suis dit que ça
+pourrait être bien de partager ça. J’utilise un gestionnaire de version (git)
+pour suivre l’évolution de ma configuration, le dépôt contenant le tout est
+disponible sur &lt;a href="http://github.com/geenux/vim_config/"&gt;github&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Actuellement ma configuration permet :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;De programmer en c++ : Alternate (:A) pour passer des .cpp aux .h, Surround pour gérer les parenthèses, matchit pour étendre la commande "%" (permettant de passer de la parenthèse ouvrante à la fermante) à plus d’éléments (balises xml…), NerdCommenter pour gérer les commentaires, DoxygenToolKit pour gérer la documentation. Et le plugin le plus important : OmniCppComplete qui permet de compléter le code plus intelligemment que Ctrl+N (notemment en utilisant les fichiers tags, que j’ai réalisé pour Qt et boost sur mon ordi).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;De faire de latex : la latex-suite est installée.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Il y a d’autres plugins intéressant, comme Arpeggio par exemple. Arpeggio permet d’utiliser des raccourcis en pressant simultanément plusieurs touches.
+Par exemple, en ajoutant la ligne suivante dans le .vimrc
+call arpeggio#map('i', '', 0, 'jk', '')
+Ça créé un raccourcis en mode insertion, de sorte que "jk" pressés simultanément sortent du mode insertion, et que "j" et "k" pressés séparément aient toujours le même effet.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Si vous décidez d’utiliser ma configuration, téléchargez là à l’adresse indiquée plus haut, puis placez le contenu du dossier dans ~/.vim. Ensuite, déplacez le vimrc dans ~/.vimrc et gvimrc dans ~/.gvimrc.&lt;/p&gt;
+&lt;p&gt;J’ai rédigé un mini aide mémoire pour moi, faites dans vim &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    :&lt;span class="k"&gt;h&lt;/span&gt; arnaud
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    &lt;em&gt;arnaud.txt&lt;/em&gt;    Arnaud Vim Config          2009-06-21&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nl"&gt;Author:&lt;/span&gt;  &lt;span class="n"&gt;TANGUY&lt;/span&gt; &lt;span class="n"&gt;Arnaud&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;arn&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;tanguy&lt;/span&gt;&lt;span class="err"&gt;@&lt;/span&gt;&lt;span class="n"&gt;gmail&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;com&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;span class="nl"&gt;Copyright:&lt;/span&gt; &lt;span class="err"&gt;©&lt;/span&gt; &lt;span class="n"&gt;Copyright&lt;/span&gt; &lt;span class="mi"&gt;2009&lt;/span&gt; &lt;span class="n"&gt;TANGUY&lt;/span&gt; &lt;span class="n"&gt;Arnaud&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;All&lt;/span&gt; &lt;span class="n"&gt;Rights&lt;/span&gt; &lt;span class="n"&gt;Reserved&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Licence&lt;/span&gt; &lt;span class="n"&gt;GNU&lt;/span&gt;
+&lt;span class="n"&gt;GPL&lt;/span&gt; &lt;span class="n"&gt;v2&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;later&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="n"&gt;your&lt;/span&gt; &lt;span class="n"&gt;option&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="o"&gt;==============================================================================&lt;/span&gt;
+&lt;span class="mf"&gt;1.&lt;/span&gt; &lt;span class="n"&gt;Contents&lt;/span&gt;         &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;arnaud&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;arnaud&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+
+    &lt;span class="mf"&gt;1.&lt;/span&gt; &lt;span class="n"&gt;Contents&lt;/span&gt;&lt;span class="p"&gt;.................................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;arnaud&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="mf"&gt;2.&lt;/span&gt; &lt;span class="n"&gt;Key&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;mappings&lt;/span&gt;&lt;span class="p"&gt;.............................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;keys&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="mf"&gt;3.&lt;/span&gt; &lt;span class="n"&gt;Plugins&lt;/span&gt;&lt;span class="p"&gt;..................................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;plugins&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;OmniCppComplete&lt;/span&gt;&lt;span class="p"&gt;........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;omnicppcomplete&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Project&lt;/span&gt;&lt;span class="p"&gt;................................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;project&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;SearchInRuntime&lt;/span&gt;&lt;span class="p"&gt;........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;searchinruntime&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Surround&lt;/span&gt;&lt;span class="p"&gt;...............................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;surround&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Alternate&lt;/span&gt;&lt;span class="p"&gt;..............................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;alternate&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;ManPageView&lt;/span&gt;&lt;span class="p"&gt;............................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;manpageview&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Matchit&lt;/span&gt;&lt;span class="p"&gt;................................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;matchit&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;NERD_Commenter&lt;/span&gt;&lt;span class="p"&gt;.........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;nerdcommenter&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;PhpDocumentor&lt;/span&gt;&lt;span class="p"&gt;..........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;phpdocumentor&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;DoxygenToolkit&lt;/span&gt;&lt;span class="p"&gt;.........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;doxygen&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Markdown&lt;/span&gt;&lt;span class="p"&gt;...............................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;markdown&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+         &lt;span class="n"&gt;Indent&lt;/span&gt; &lt;span class="n"&gt;Guides&lt;/span&gt;&lt;span class="p"&gt;..........................&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;indent&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;guides&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+&lt;span class="o"&gt;==============================================================================&lt;/span&gt;
+&lt;span class="mf"&gt;2.&lt;/span&gt; &lt;span class="n"&gt;Key&lt;/span&gt; &lt;span class="n"&gt;mappings&lt;/span&gt;                         &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;key&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;keys&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+       &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cd&lt;/span&gt;      &lt;span class="n"&gt;cd&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;directory&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="n"&gt;view&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;F6&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;SearchInVar&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;open&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="n"&gt;view&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;F7&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;SearchInVar&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;open&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;tab&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;F1&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;Project&lt;/span&gt; &lt;span class="n"&gt;open&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt; &lt;span class="n"&gt;window&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;F2&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;Ctags&lt;/span&gt; &lt;span class="n"&gt;rebuild&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;In&lt;/span&gt; &lt;span class="n"&gt;insert&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;normal&lt;/span&gt; &lt;span class="n"&gt;modes&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;F9&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;     &lt;span class="n"&gt;Build&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;ftplugin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;so&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;may&lt;/span&gt; &lt;span class="n"&gt;not&lt;/span&gt; &lt;span class="n"&gt;be&lt;/span&gt;
+                &lt;span class="n"&gt;mapped&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;every&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;
+       &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;D&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;    &lt;span class="n"&gt;Generate&lt;/span&gt; &lt;span class="n"&gt;doc&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;function&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;class&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;used&lt;/span&gt; &lt;span class="n"&gt;by&lt;/span&gt;
+               &lt;span class="n"&gt;ftplugins&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="n"&gt;least&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;php&lt;/span&gt; &lt;span class="n"&gt;one&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+&lt;span class="mf"&gt;3.&lt;/span&gt; &lt;span class="n"&gt;Plugins&lt;/span&gt;                  &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;plugins&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;plugin&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+
+    &lt;span class="n"&gt;OMNICPPCOMPLETE&lt;/span&gt;                             &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;omnicppcomplete&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;Omnicppcomplete&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;completition&lt;/span&gt; &lt;span class="n"&gt;plugin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;completes&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;maily&lt;/span&gt;
+    &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="n"&gt;ones&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;based&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;ctags&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;so&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;requires&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;tags&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;which&lt;/span&gt; &lt;span class="n"&gt;can&lt;/span&gt; &lt;span class="n"&gt;be&lt;/span&gt; &lt;span class="n"&gt;created&lt;/span&gt;
+    &lt;span class="nl"&gt;with:&lt;/span&gt;
+    &lt;span class="n"&gt;ctags&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;R&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;++-&lt;/span&gt;&lt;span class="n"&gt;kinds&lt;/span&gt;&lt;span class="o"&gt;=+&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;fields&lt;/span&gt;&lt;span class="o"&gt;=+&lt;/span&gt;&lt;span class="n"&gt;iaS&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;extra&lt;/span&gt;&lt;span class="o"&gt;=+&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;Then&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;autocompletition&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;o&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;automatically&lt;/span&gt; &lt;span class="n"&gt;called&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="n"&gt;my&lt;/span&gt; &lt;span class="n"&gt;config&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;omnicppcomplete&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;PROJECT&lt;/span&gt;                                   &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;project&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;projects&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;A&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt; &lt;span class="n"&gt;managment&lt;/span&gt; &lt;span class="n"&gt;plugin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;allows&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;remember&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt;
+    &lt;span class="n"&gt;structures&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;re&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;open&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;easily&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="err"&gt;\&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="n"&gt;creates&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt; &lt;span class="n"&gt;saves&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;SPACE&lt;/span&gt; &lt;span class="n"&gt;grow&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;reduce&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;project&lt;/span&gt; &lt;span class="n"&gt;window&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;project&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;SEARCHINRUNTIME&lt;/span&gt;                     &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;searchinruntime&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;SIR&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;Search&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;variable&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;PATH&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;provides&lt;/span&gt; &lt;span class="n"&gt;an&lt;/span&gt; &lt;span class="n"&gt;easy&lt;/span&gt; &lt;span class="n"&gt;way&lt;/span&gt;
+    &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;load&lt;/span&gt; &lt;span class="n"&gt;files&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;searchInRuntime&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;SURROUND&lt;/span&gt;                             &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;surround&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;plugin&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;surround&lt;/span&gt; &lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="n"&gt;caracters&lt;/span&gt; &lt;span class="n"&gt;like&lt;/span&gt; &lt;span class="p"&gt;{,(,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;...&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;cs&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;  &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;replace&lt;/span&gt; &lt;span class="p"&gt;(...)&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;...&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;cs&lt;/span&gt;&lt;span class="p"&gt;(}&lt;/span&gt;  &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;replace&lt;/span&gt; &lt;span class="p"&gt;(...)&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="p"&gt;{...}&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;without&lt;/span&gt; &lt;span class="n"&gt;spaces&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;cs&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;replace&lt;/span&gt; &lt;span class="p"&gt;{...}&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;...&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;/&lt;/span&gt;&lt;span class="n"&gt;q&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;ds&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;delete&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;ys&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="n"&gt;element&lt;/span&gt;&lt;span class="p"&gt;]{&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;surround&lt;/span&gt; &lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="n"&gt;element&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
+    &lt;span class="n"&gt;Example&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;_Hello dear friends&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;ys2w&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt; &lt;span class="n"&gt;will&lt;/span&gt; &lt;span class="n"&gt;give&lt;/span&gt; &lt;span class="n"&gt;you&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;[ Hello dear ] friends&amp;quot;&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;Visual&lt;/span&gt; &lt;span class="n"&gt;selection&lt;/span&gt; &lt;span class="n"&gt;surrounding&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;press&lt;/span&gt; &lt;span class="n"&gt;V&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;then&lt;/span&gt; &lt;span class="n"&gt;select&lt;/span&gt; &lt;span class="n"&gt;text&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Press&lt;/span&gt; &lt;span class="n"&gt;S&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="n"&gt;your&lt;/span&gt;
+    &lt;span class="n"&gt;surrounding&lt;/span&gt; &lt;span class="n"&gt;character&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;can&lt;/span&gt; &lt;span class="n"&gt;be&lt;/span&gt; &lt;span class="n"&gt;html&lt;/span&gt; &lt;span class="n"&gt;tags&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;surround&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;ALTERNATE&lt;/span&gt;                               &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;alternate&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;Switch&lt;/span&gt; &lt;span class="n"&gt;between&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt; &lt;span class="p"&gt;(.&lt;/span&gt;&lt;span class="n"&gt;hpp&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt; &lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;so&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+
+    &lt;span class="n"&gt;MANPAGEVIEW&lt;/span&gt;                             &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;manpageview&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;View&lt;/span&gt; &lt;span class="n"&gt;php&lt;/span&gt; &lt;span class="n"&gt;man&lt;/span&gt; &lt;span class="n"&gt;pages&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;requires&lt;/span&gt; &lt;span class="n"&gt;links&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;Call&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="n"&gt;K&lt;/span&gt; &lt;span class="n"&gt;as&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;unixes&lt;/span&gt; &lt;span class="n"&gt;man&lt;/span&gt; &lt;span class="n"&gt;pages&lt;/span&gt;
+
+    &lt;span class="n"&gt;MATCHIT&lt;/span&gt;                                 &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;matchit&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;allows&lt;/span&gt; &lt;span class="n"&gt;you&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;configure&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt; &lt;span class="n"&gt;more&lt;/span&gt; &lt;span class="n"&gt;than&lt;/span&gt; &lt;span class="n"&gt;just&lt;/span&gt;
+    &lt;span class="n"&gt;single&lt;/span&gt; &lt;span class="n"&gt;characters&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;  &lt;span class="n"&gt;You&lt;/span&gt; &lt;span class="n"&gt;can&lt;/span&gt; &lt;span class="n"&gt;match&lt;/span&gt; &lt;span class="n"&gt;words&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;even&lt;/span&gt; &lt;span class="n"&gt;regular&lt;/span&gt;
+    &lt;span class="n"&gt;expressions&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;Also&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;matching&lt;/span&gt; &lt;span class="n"&gt;treats&lt;/span&gt; &lt;span class="n"&gt;strings&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;comments&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;as&lt;/span&gt; &lt;span class="n"&gt;recognized&lt;/span&gt; &lt;span class="n"&gt;by&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt;
+    &lt;span class="n"&gt;syntax&lt;/span&gt; &lt;span class="n"&gt;highlighting&lt;/span&gt; &lt;span class="n"&gt;mechanism&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;intelligently&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;The&lt;/span&gt; &lt;span class="k"&gt;default&lt;/span&gt; &lt;span class="n"&gt;ftplugins&lt;/span&gt; &lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="n"&gt;settings&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;several&lt;/span&gt; &lt;span class="n"&gt;languages&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;Ada&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ASP&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="n"&gt;VBS&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Csh&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;DTD&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Essbase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Fortran&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;HTML&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;JSP&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;same&lt;/span&gt; &lt;span class="n"&gt;as&lt;/span&gt; &lt;span class="n"&gt;HTML&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;LaTeX&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Lua&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Pascal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;SGML&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Shell&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Tcsh&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Vim&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;XML&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;I&lt;/span&gt; &lt;span class="n"&gt;no&lt;/span&gt; &lt;span class="n"&gt;longer&lt;/span&gt; &lt;span class="n"&gt;keep&lt;/span&gt; &lt;span class="n"&gt;track&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;so&lt;/span&gt; &lt;span class="n"&gt;there&lt;/span&gt; &lt;span class="n"&gt;may&lt;/span&gt; &lt;span class="n"&gt;be&lt;/span&gt; &lt;span class="n"&gt;others&lt;/span&gt;&lt;span class="p"&gt;.)&lt;/span&gt;
+    &lt;span class="n"&gt;The&lt;/span&gt; &lt;span class="n"&gt;documentation&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;included&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;zip&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;explains&lt;/span&gt; &lt;span class="n"&gt;how&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;configure&lt;/span&gt;
+    &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;script&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;new&lt;/span&gt; &lt;span class="n"&gt;language&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;how&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;modify&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;defaults&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;matchit&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;NERDCOMMENTER&lt;/span&gt;                      &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;nerd&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;  &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;nerdcommenter&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;Nerd&lt;/span&gt; &lt;span class="n"&gt;commenter&lt;/span&gt; &lt;span class="n"&gt;allow&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;comment&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt; &lt;span class="n"&gt;according&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;file&lt;/span&gt; &lt;span class="n"&gt;type&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;The&lt;/span&gt; &lt;span class="n"&gt;most&lt;/span&gt; &lt;span class="n"&gt;useful&lt;/span&gt; &lt;span class="n"&gt;mappings&lt;/span&gt; &lt;span class="n"&gt;are&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cc&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Comments&lt;/span&gt; &lt;span class="n"&gt;out&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;visual&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cy&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;same&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;but&lt;/span&gt; &lt;span class="n"&gt;yank&lt;/span&gt; &lt;span class="n"&gt;before&lt;/span&gt; &lt;span class="n"&gt;commenting&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cl&lt;/span&gt; &lt;span class="n"&gt;OR&lt;/span&gt; &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cr&lt;/span&gt; &lt;span class="n"&gt;OR&lt;/span&gt; &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cb&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComAlignedComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Same&lt;/span&gt; &lt;span class="n"&gt;as&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="n"&gt;except&lt;/span&gt; &lt;span class="n"&gt;that&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;delimiters&lt;/span&gt; &lt;span class="n"&gt;are&lt;/span&gt; &lt;span class="n"&gt;aligned&lt;/span&gt; &lt;span class="n"&gt;down&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt;
+    &lt;span class="n"&gt;left&lt;/span&gt; &lt;span class="n"&gt;side&lt;/span&gt; &lt;span class="p"&gt;(,&lt;/span&gt;&lt;span class="n"&gt;cl&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;right&lt;/span&gt; &lt;span class="n"&gt;side&lt;/span&gt; &lt;span class="p"&gt;(,&lt;/span&gt;&lt;span class="n"&gt;cr&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="n"&gt;both&lt;/span&gt; &lt;span class="n"&gt;sides&lt;/span&gt;
+    &lt;span class="p"&gt;(,&lt;/span&gt;&lt;span class="n"&gt;cb&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cI&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComPrependComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cA&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComAppendComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Comment&lt;/span&gt; &lt;span class="n"&gt;before&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;after&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Adds&lt;/span&gt; &lt;span class="n"&gt;comment&lt;/span&gt; &lt;span class="n"&gt;delimiters&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;end&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;goes&lt;/span&gt;
+    &lt;span class="n"&gt;into&lt;/span&gt; &lt;span class="n"&gt;insert&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;  &lt;span class="n"&gt;between&lt;/span&gt; &lt;span class="n"&gt;them&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;space&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComToggleComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Toggles&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;comment&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt; &lt;span class="n"&gt;If&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;topmost&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt;
+    &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;commented&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;all&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="n"&gt;lines&lt;/span&gt; &lt;span class="n"&gt;are&lt;/span&gt; &lt;span class="n"&gt;uncommented&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;vice&lt;/span&gt; &lt;span class="n"&gt;versa&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cu&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComUncommentLine&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Uncomments&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cm&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComMinimalComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Comments&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;given&lt;/span&gt; &lt;span class="n"&gt;lines&lt;/span&gt; &lt;span class="n"&gt;using&lt;/span&gt; &lt;span class="n"&gt;only&lt;/span&gt; &lt;span class="n"&gt;one&lt;/span&gt; &lt;span class="n"&gt;set&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;multipart&lt;/span&gt; &lt;span class="n"&gt;delimiters&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;
+    &lt;span class="n"&gt;possible&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;ci&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComInvertComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Toggles&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;comment&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;individually&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Each&lt;/span&gt;
+    &lt;span class="n"&gt;selected&lt;/span&gt;
+    &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="n"&gt;that&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;commented&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;uncommented&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;vice&lt;/span&gt; &lt;span class="n"&gt;versa&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;cs&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComSexyComment&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="n"&gt;Comments&lt;/span&gt; &lt;span class="n"&gt;out&lt;/span&gt; &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;selected&lt;/span&gt; &lt;span class="n"&gt;lines&lt;/span&gt; &lt;span class="err"&gt;``&lt;/span&gt;&lt;span class="n"&gt;sexily&lt;/span&gt;&lt;span class="err"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt; &lt;span class="n"&gt;Useful&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;doc&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;...&lt;/span&gt;
+
+    &lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;ca&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDComAltDelim&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+    &lt;span class="cm"&gt;/*Switches to the alternative set of delimiters.*/&lt;/span&gt;
+
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;NERDCommenter&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+
+    &lt;span class="n"&gt;PHPDOCUMENTOR&lt;/span&gt;                                &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;phpdocumentor&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;phpd&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;PhpDocumentor&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;plugin&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;generating&lt;/span&gt; &lt;span class="n"&gt;phpDocumentor&lt;/span&gt; &lt;span class="n"&gt;documentation&lt;/span&gt;
+    &lt;span class="n"&gt;blocs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;In&lt;/span&gt; &lt;span class="n"&gt;my&lt;/span&gt; &lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;it&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;called&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;P&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;every&lt;/span&gt; &lt;span class="n"&gt;mode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+
+    &lt;span class="n"&gt;DOXYGEN&lt;/span&gt;                                                 &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;doxygen&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;It&lt;/span&gt; &lt;span class="n"&gt;is&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;plugin&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;autocreatin&lt;/span&gt; &lt;span class="n"&gt;doxygen&lt;/span&gt; &lt;span class="n"&gt;commenting&lt;/span&gt; &lt;span class="n"&gt;blocs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;
+    &lt;span class="n"&gt;Move&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="n"&gt;function&lt;/span&gt; &lt;span class="n"&gt;declaration&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;Dox&lt;/span&gt; &lt;span class="n"&gt;or&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;P&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class="n"&gt;See&lt;/span&gt; &lt;span class="n"&gt;http&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="c1"&gt;//www.vim.org/scripts/script.php?script_id=987 for more details&lt;/span&gt;
+    &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;configuration&lt;/span&gt; &lt;span class="n"&gt;variables&lt;/span&gt;
+
+    &lt;span class="n"&gt;MARKDOWN&lt;/span&gt;                                     &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;markdown&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="nl"&gt;Mappings:&lt;/span&gt;
+    &lt;span class="n"&gt;the&lt;/span&gt; &lt;span class="n"&gt;following&lt;/span&gt; &lt;span class="n"&gt;work&lt;/span&gt; &lt;span class="n"&gt;on&lt;/span&gt; &lt;span class="n"&gt;normal&lt;/span&gt; &lt;span class="n"&gt;and&lt;/span&gt; &lt;span class="n"&gt;visual&lt;/span&gt; &lt;span class="n"&gt;modes&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;]]&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;[[&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;previous&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt; &lt;span class="n"&gt;sibling&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;any&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;previous&lt;/span&gt; &lt;span class="n"&gt;sibling&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;any&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;Current&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt;
+    &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="n"&gt;u&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;go&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;parent&lt;/span&gt; &lt;span class="n"&gt;header&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Up&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;INDENT&lt;/span&gt; &lt;span class="n"&gt;GUIDES&lt;/span&gt;                               &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;indent&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;guides&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;{{{&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;
+    &lt;span class="n"&gt;Activate&lt;/span&gt; &lt;span class="n"&gt;with&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Leader&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="n"&gt;ig&lt;/span&gt;   &lt;span class="p"&gt;(,&lt;/span&gt;&lt;span class="n"&gt;ig&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ &lt;/p&gt;</summary><category term="VIM"></category></entry><entry><title>VIM : Un Essai de plugin pour la compilation C++</title><link href="http://arntanguy.no-ip.org/vim-un-essai-de-plugin-pour-la-compilation-c.html" rel="alternate"></link><published>2009-12-23T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2009-12-23:vim-un-essai-de-plugin-pour-la-compilation-c.html</id><summary type="html">&lt;p&gt;J’aime beaucoup utiliser vim pour programmer (je n’ai jamais réussi à me faire à la façon de penser d’emacs et vim me convient très bien une fois configuré), mais jusqu’ici une chose me chagrinait, la compilation en c++. Les principaux points qui me dérangeaient étaient :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;La liste des erreurs de compilations qui ne reste pas&lt;/li&gt;
+&lt;li&gt;La difficulté pour compiler à partir d’un autre dossier. J’utilise beaucoup ceci, notemment avec l’excellent cmake qui permet de réaliser simplement une compilation dans un dossier séparé.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Je ne savais pas trop comment faire d’extensions pour vim, je me suis dit que c’était l’occasion de voir.&lt;/p&gt;
+&lt;p&gt;J’ai donc fait un petit plugin qui résoud partiellement ces défauts. Il permet de
+&lt;em&gt; Compiler à partir du dossier courant, ou d’un autre dossier
+&lt;/em&gt; Laisser la fenêtre de compilation (utilisation de quickfix) ouverte, et ainsi, sauter facilement aux erreurs
+* Et en prime, d’ajouter automatiquement une bonne partie des includes manquants ! Cette fonctionnalité est assez bancale, et ne fonctionne quand dans les cas ou le nom de la classe est le même que le nom du fichier la contenant, ce qui correspond à mon style de programmation. L’ajout des includes se fait de façon relativement intelligente : si il y a déjà des includes, c’est ajouté à cet endroit, sinon, le plugin essaye de trouver la fin du header et place les includes après. Au pire, on peut spécifier une ligne pour l’ajout.&lt;/p&gt;
+&lt;h1 id="installation"&gt;Installation&lt;a class="headerlink" href="#installation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Il suffit de placer le script suivant dans le dossier ~/.vim/ftplugin/cpp, je l’ai nommé make.vim (vous pouvez mettre le nom que vous voulez, tant qu’il a l’extension .vim).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;    &amp;quot;    Copyright (C) 2008  TANGUY Arnaud &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;                                                                             *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; This program is free software; you can redistribute it and/or modify        *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; it under the terms of the GNU General Public License as published by        *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; the Free Software Foundation; version 3 of the License                      *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;                                                                             *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; This program is distributed in the hope that it will be useful,             *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; but WITHOUT ANY WARRANTY; without even the implied warranty of              *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; GNU General Public License for more details.                                *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;                                                                             *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; You should have received a copy of the GNU General Public License along     *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; with this program; if not, write to the Free Software Foundation, Inc.,     *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.                 *&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;******************************************************************************/&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; This is my first vim plugin, so there might be errors or inaccuracies. If&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; you see some mistakes, please let me know.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; *************** DESCRIPTION **********************&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; This is a make plugin for cpp files. It makes, and parse the results to add&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; usefull informations, such as auto-include headers.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; **************** FEATURES ************************&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Features wished but not implemented yet:&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; - Auto add includes after compilation (works fine, at least for Qt).&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   But : File names must be named like the class. I.e if you have a class&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   named TestClass, then the file name must be TestClass.h TestClass.hpp or&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   TestClass&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   When other includes are already presents: add the includes with them&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   Otherwise, guess where to add includes : after the header, or at a default&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   position.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; - Show the quickfix window&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; *************** CONFIGURATION *****************&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; g:default_includes_line    the number of the default include line. It is&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;                            used when not better place is found&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; g:quickfix_size            The number of lines of the quickfix window&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; **************  TODO *******************&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; - Auto (or ask?) add pre-declaration (class Type;) in the header, and the include in&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;   the .cpp file.  To switch beetween files, use a.vim plugin.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; - Seek for innacuracies, and fix them. Optimize too...&lt;/span&gt;
+
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:cpo_save&lt;span class="p"&gt;=&lt;/span&gt;&amp;amp;&lt;span class="nb"&gt;cpo&lt;/span&gt;
+    &lt;span class="k"&gt;set&lt;/span&gt; &lt;span class="nb"&gt;cpo&lt;/span&gt;&amp;amp;&lt;span class="k"&gt;vim&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Do not reload if already loaded&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; exists&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;g:loaded_make_plugin&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      \ &amp;amp;&amp;amp; &lt;span class="p"&gt;!&lt;/span&gt;exists&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;g:force_reload_make_plugin&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+       &lt;span class="k"&gt;finish&lt;/span&gt;
+    &lt;span class="k"&gt;endif&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;g&lt;/span&gt;:loaded_make_plugin&lt;span class="p"&gt;=&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Global variables initialisation (if not already set)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;!&lt;/span&gt;exists&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;g:quickfix_size&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;g&lt;/span&gt;:quickfix_size&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;6&lt;/span&gt;
+    &lt;span class="k"&gt;endif&lt;/span&gt;
+
+
+&lt;span class="c"&gt;    &amp;quot; Function : SortUnique&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  :  Works like sort(), optionally taking in a comparator&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;             (just like the original), except that duplicate entries will be removed.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : A list, and optionally a comparator&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : The sorted list&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : Unknown, found on http://vim.wikia.com/wiki/Unique_sorting&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; SortUnique&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="nb"&gt;list&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; ... &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nb"&gt;dictionary&lt;/span&gt; &lt;span class="p"&gt;=&lt;/span&gt; {}
+      &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:&lt;span class="nb"&gt;list&lt;/span&gt;
+        execute &lt;span class="s2"&gt;&amp;quot;let dictionary[ &amp;#39;&amp;quot;&lt;/span&gt; . &lt;span class="k"&gt;i&lt;/span&gt; . &lt;span class="s2"&gt;&amp;quot;&amp;#39; ] = &amp;#39;&amp;#39;&amp;quot;&lt;/span&gt;
+      &lt;span class="k"&gt;endfor&lt;/span&gt;
+      &lt;span class="k"&gt;let&lt;/span&gt; result &lt;span class="p"&gt;=&lt;/span&gt; []
+      &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; exists&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;a:1&amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; result &lt;span class="p"&gt;=&lt;/span&gt; &lt;span class="k"&gt;sort&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; keys&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="nb"&gt;dictionary&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:&lt;span class="m"&gt;1&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="k"&gt;else&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; result &lt;span class="p"&gt;=&lt;/span&gt; &lt;span class="k"&gt;sort&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; keys&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="nb"&gt;dictionary&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="k"&gt;endif&lt;/span&gt;
+      &lt;span class="k"&gt;return&lt;/span&gt; result
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : RemoveMatching&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Delete items in a list, when they are matching items in an&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            another list&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : listRef: The list from which you want to remove items&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            listMatch: The list to compare with&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : The listRef, without matched items&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Note     : This can surely be improved, but I still don&amp;#39;t know much viml&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; RemoveMatching&lt;span class="p"&gt;(&lt;/span&gt;listRef&lt;span class="p"&gt;,&lt;/span&gt; listMatch&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt;&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; ref_list &lt;span class="p"&gt;=&lt;/span&gt; copy&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;a&lt;/span&gt;:listRef&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt;&lt;span class="p"&gt;&amp;lt;&lt;/span&gt;len&lt;span class="p"&gt;(&lt;/span&gt;ref_list&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;j&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:listMatch
+                &lt;span class="k"&gt;if&lt;/span&gt; ref_list[&lt;span class="k"&gt;i&lt;/span&gt;] &lt;span class="p"&gt;==&lt;/span&gt; &lt;span class="k"&gt;j&lt;/span&gt;
+                    &lt;span class="k"&gt;call&lt;/span&gt; remove&lt;span class="p"&gt;(&lt;/span&gt;ref_list&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;endif&lt;/span&gt;
+            &lt;span class="k"&gt;endfor&lt;/span&gt;
+            &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt; &lt;span class="p"&gt;+=&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;endwhile&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; ref_list
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : GetMissingIncludes (PRIVATE)&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Find the missing includes in the compilation error list&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : None&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : Nothing&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; TODO     : Check if the include is in the path, otherwise, ask the user to&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            know what to do.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            Is there all possible related errors messages here ? Let me know&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            if it is not the case&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:GetMissingIncludes&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; Get the quickfix errors&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; errors &lt;span class="p"&gt;=&lt;/span&gt; getqflist&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;=&lt;/span&gt; []
+&lt;span class="c"&gt;        &amp;quot; To avoid some errors with variables names&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; not_includes &lt;span class="p"&gt;=&lt;/span&gt; []
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;l&lt;/span&gt;:&lt;span class="k"&gt;count&lt;/span&gt;&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; errors
+            &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.* was not declared in this scope&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;                &amp;quot; Find the possible name in the error&lt;/span&gt;
+&lt;span class="c"&gt;                &amp;quot;let include = substitute(i[&amp;quot;text&amp;quot;], &amp;#39;.*error:..\(.*\)..was not declared in this scope&amp;#39;, &amp;#39;\1&amp;#39;, &amp;#39;g&amp;#39;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.*error:..\(.*\)..was not declared in this scope&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+&lt;span class="c"&gt;                &amp;quot; Check if it is really a type, and not a variable name&lt;/span&gt;
+&lt;span class="c"&gt;                &amp;quot;let nextError = errors[l:count + 1][&amp;quot;text&amp;quot;]&lt;/span&gt;
+&lt;span class="c"&gt;                &amp;quot;if(nextError =~ &amp;quot;.* expected .;. before .*&amp;quot;)&lt;/span&gt;
+&lt;span class="c"&gt;                    &amp;quot;let not_includes += [substitute(nextError, &amp;#39;.* expected .;. before .\(.*\).&amp;#39;, &amp;#39;\1&amp;#39;, &amp;#39;g&amp;#39;)]&lt;/span&gt;
+&lt;span class="c"&gt;                    &amp;quot;let includes += [include]&lt;/span&gt;
+&lt;span class="c"&gt;                &amp;quot;endif&lt;/span&gt;
+            &lt;span class="k"&gt;elseif&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.*variable .* has initializer but incomplete type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.*variable .\(.*\) .* has initializer but incomplete type&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+            &lt;span class="k"&gt;elseif&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.* aggregate .* has incomplete type and cannot be defined&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.* aggregate .\(.*\) .* has incomplete type and cannot be defined&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+            &lt;span class="k"&gt;elseif&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.* has not been declared&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.* .\(.*\). has not been declared&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+            &lt;span class="k"&gt;elseif&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.* incomplete type .* used in nested name specifier&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.* incomplete type .\(.*\). used in nested name specifier&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+            &lt;span class="k"&gt;elseif&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;=~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;.* invalid use of incomplete type .*&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;+=&lt;/span&gt; [substitute&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;i&lt;/span&gt;[&lt;span class="s2"&gt;&amp;quot;text&amp;quot;&lt;/span&gt;]&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;.* invalid use of incomplete type .struct \(.*\).&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;\1&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;g&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;]
+            &lt;span class="k"&gt;endif&lt;/span&gt;
+            &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;l&lt;/span&gt;:&lt;span class="k"&gt;count&lt;/span&gt; &lt;span class="p"&gt;+=&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;endfor&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; Return the found includes name, and sort them, remove doubles&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; tmpReturn &lt;span class="p"&gt;=&lt;/span&gt; RemoveMatching&lt;span class="p"&gt;(&lt;/span&gt;includes&lt;span class="p"&gt;,&lt;/span&gt; not_includes&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; tmpReturn &lt;span class="p"&gt;=&lt;/span&gt; SortUnique&lt;span class="p"&gt;(&lt;/span&gt;tmpReturn&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:CheckInPath&lt;span class="p"&gt;(&lt;/span&gt;tmpReturn&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : CheckInPath&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Check if an include exists in path&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : The includes names list&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : A dictionnary of the found entry :&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;global&amp;quot; =&amp;gt; List   : The global entry (those included with&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               #include &amp;lt;...&amp;gt;)&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;local&amp;quot; =&amp;gt; List    : The local entry (those included with&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               #include &amp;quot;...&amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;unmatched&amp;quot; =&amp;gt; List : The includes not found&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud  &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:CheckInPath&lt;span class="p"&gt;(&lt;/span&gt;includesList&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;=&lt;/span&gt; copy&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;a&lt;/span&gt;:includesList&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; results &lt;span class="p"&gt;=&lt;/span&gt; { &lt;span class="s2"&gt;&amp;quot;global&amp;quot;&lt;/span&gt; : []&lt;span class="p"&gt;,&lt;/span&gt;
+                        \&lt;span class="s2"&gt;&amp;quot;local&amp;quot;&lt;/span&gt; : []&lt;span class="p"&gt;,&lt;/span&gt;
+                        \&lt;span class="s2"&gt;&amp;quot;unmatched&amp;quot;&lt;/span&gt;: [] }
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nb"&gt;inc&lt;/span&gt;  &lt;span class="k"&gt;in&lt;/span&gt; includes
+          &lt;span class="k"&gt;let&lt;/span&gt; mpath&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;**,/usr/include/**&amp;quot;&lt;/span&gt;
+          &lt;span class="k"&gt;let&lt;/span&gt; found &lt;span class="p"&gt;=&lt;/span&gt; findfile&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;inc&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; mpath&lt;span class="p"&gt;)&lt;/span&gt;
+          &lt;span class="k"&gt;if&lt;/span&gt; found &lt;span class="p"&gt;!=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;
+              &lt;span class="k"&gt;let&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;global&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;+=&lt;/span&gt; [&lt;span class="nb"&gt;inc&lt;/span&gt;]
+          &lt;span class="k"&gt;else&lt;/span&gt;
+&lt;span class="c"&gt;              &amp;quot; XXX : strange, why regex don&amp;#39;t works with findfile ?&lt;/span&gt;
+              &lt;span class="k"&gt;let&lt;/span&gt; found &lt;span class="p"&gt;=&lt;/span&gt; findfile&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;inc&lt;/span&gt;.&lt;span class="s2"&gt;&amp;quot;.h&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; mpath&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;found &lt;span class="p"&gt;!=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+                  &lt;span class="k"&gt;let&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;local&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;+=&lt;/span&gt; [found]
+              &lt;span class="k"&gt;else&lt;/span&gt;
+                  &lt;span class="k"&gt;let&lt;/span&gt; found &lt;span class="p"&gt;=&lt;/span&gt; findfile&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;inc&lt;/span&gt;.&lt;span class="s2"&gt;&amp;quot;.hpp&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; mpath&lt;span class="p"&gt;)&lt;/span&gt;
+                  &lt;span class="k"&gt;if&lt;/span&gt; found &lt;span class="p"&gt;!=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;
+                      &lt;span class="k"&gt;let&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;local&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;+=&lt;/span&gt; [found]
+                  &lt;span class="k"&gt;else&lt;/span&gt;
+                      &lt;span class="k"&gt;let&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;unmatched&amp;quot;&lt;/span&gt;] &lt;span class="p"&gt;+=&lt;/span&gt; [&lt;span class="nb"&gt;inc&lt;/span&gt;]
+                  &lt;span class="k"&gt;endif&lt;/span&gt;
+              &lt;span class="k"&gt;endif&lt;/span&gt;
+          &lt;span class="k"&gt;endif&lt;/span&gt;
+        &lt;span class="k"&gt;endfor&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;global&amp;quot;&lt;/span&gt;]
+            &lt;span class="k"&gt;echomsg&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;global : &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;i&lt;/span&gt;
+        &lt;span class="k"&gt;endfor&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;j&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;local&amp;quot;&lt;/span&gt;]
+            &lt;span class="k"&gt;echomsg&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;local : &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;j&lt;/span&gt;
+        &lt;span class="k"&gt;endfor&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;h&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; results[&lt;span class="s2"&gt;&amp;quot;unmatched&amp;quot;&lt;/span&gt;]
+            &lt;span class="k"&gt;echomsg&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;unmatched : &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;h&lt;/span&gt;
+        &lt;span class="k"&gt;endfor&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; results
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : SeekPosition&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Find the best position where the includes will be placed&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : None&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : The found line&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:SeekPosition&lt;span class="p"&gt;()&lt;/span&gt;
+        exe &lt;span class="s2"&gt;&amp;quot;normal gg&amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; Seek the existing includes, to add it here if they exists&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; line &lt;span class="p"&gt;=&lt;/span&gt; search&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;^#include&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; line &lt;span class="p"&gt;&amp;gt;&lt;/span&gt; &lt;span class="m"&gt;0&lt;/span&gt;
+           &lt;span class="k"&gt;return&lt;/span&gt; line
+        &lt;span class="k"&gt;endif&lt;/span&gt;
+
+&lt;span class="c"&gt;        &amp;quot; Otherwise, find a default location. Usually, C files are written with a&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; header, and space is left between header and code. So, we&amp;#39;ll seek the&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; first line without anything but white character on it&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; line &lt;span class="p"&gt;=&lt;/span&gt; search&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;^\( ?\)*$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; line &lt;span class="p"&gt;&amp;gt;&lt;/span&gt; &lt;span class="m"&gt;0&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; line
+        &lt;span class="k"&gt;endif&lt;/span&gt;
+
+&lt;span class="c"&gt;        &amp;quot; If not found, set a default value&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; exists&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;g:default_includes_line&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;g&lt;/span&gt;:default_includes_line
+        &lt;span class="k"&gt;else&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;endif&lt;/span&gt;
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+
+&lt;span class="c"&gt;    &amp;quot; Function : AddIncludes (PRIVATE)&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Add the includes given in args in the file&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : includesDict: A list containing the includes name and type&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;global&amp;quot; =&amp;gt; global includes&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;local&amp;quot; =&amp;gt; local includes&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;               &amp;quot;unmatched&amp;quot; =&amp;gt; not found, so ask&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : Nothing&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:AddIncludes&lt;span class="p"&gt;(&lt;/span&gt;includesDict&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;len&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;a&lt;/span&gt;:includesDict&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;&amp;gt;&lt;/span&gt; &lt;span class="m"&gt;0&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="k"&gt;l&lt;/span&gt;&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="k"&gt;s&lt;/span&gt;:SeekPosition&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nb"&gt;include&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:includesDict[&lt;span class="s2"&gt;&amp;quot;local&amp;quot;&lt;/span&gt;]
+                exe &lt;span class="s2"&gt;&amp;quot;normal &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;l&lt;/span&gt;.&lt;span class="s1"&gt;&amp;#39;GO#include &amp;quot;&amp;#39;&lt;/span&gt;.&lt;span class="nb"&gt;include&lt;/span&gt;.&lt;span class="s1"&gt;&amp;#39;&amp;quot;&amp;#39;&lt;/span&gt;
+            &lt;span class="k"&gt;endfor&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nb"&gt;inc&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:includesDict[&lt;span class="s2"&gt;&amp;quot;global&amp;quot;&lt;/span&gt;]
+                exe &lt;span class="s2"&gt;&amp;quot;normal &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;l&lt;/span&gt;.&lt;span class="s1"&gt;&amp;#39;GO#include &amp;lt;&amp;#39;&lt;/span&gt;.&lt;span class="nb"&gt;inc&lt;/span&gt;.&lt;span class="s1"&gt;&amp;#39;&amp;gt;&amp;#39;&lt;/span&gt;
+            &lt;span class="k"&gt;endfor&lt;/span&gt;
+            &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="k"&gt;i&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="k"&gt;a&lt;/span&gt;:includesDict[&lt;span class="s2"&gt;&amp;quot;unmatched&amp;quot;&lt;/span&gt;]
+                &lt;span class="k"&gt;echomsg&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;unmatched &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;i&lt;/span&gt;
+            &lt;span class="k"&gt;endfor&lt;/span&gt;
+
+&lt;span class="c"&gt;            &amp;quot; Once the includes are added, rebuild&lt;/span&gt;
+            &lt;span class="k"&gt;silent&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; execute &amp;amp;&lt;span class="nb"&gt;makeprg&lt;/span&gt;
+        &lt;span class="k"&gt;endif&lt;/span&gt;
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : MyMake&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  : Build a cpp project, using make, and doing some more cool stuff.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            This function call everything needed for this plugin : autoadd&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot;            includes...&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     : None&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  : 1 if path1 is equal to path2, 0 otherwise.&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud &amp;lt;arn.tanguy@gmail.com&amp;gt;&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:MakeIncludes&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot;exe &amp;amp;makeprg&lt;/span&gt;
+        &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:Make&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;a&lt;/span&gt;:&lt;span class="nb"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; includes &lt;span class="p"&gt;=&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:GetMissingIncludes&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:AddIncludes&lt;span class="p"&gt;(&lt;/span&gt;includes&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;endf&lt;/span&gt;
+
+&lt;span class="c"&gt;    &amp;quot; Function : s:Make&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Purpose  :&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Args     :&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Returns  :&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Author   : TANGUY Arnaud&lt;/span&gt;
+    &lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:Make&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; Save the old directory, and go to the new one&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; olddir&lt;span class="p"&gt;=&lt;/span&gt;getcwd&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;a&lt;/span&gt;:&lt;span class="nb"&gt;dir&lt;/span&gt;  &lt;span class="p"&gt;!=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            execute &lt;span class="s2"&gt;&amp;quot;:lcd &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;a&lt;/span&gt;:&lt;span class="nb"&gt;dir&lt;/span&gt;
+        &lt;span class="k"&gt;endif&lt;/span&gt;
+        &lt;span class="k"&gt;silent&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; exe &amp;amp;&lt;span class="nb"&gt;makeprg&lt;/span&gt;
+        execute &lt;span class="s2"&gt;&amp;quot;:lcd &amp;quot;&lt;/span&gt;.olddir
+        &lt;span class="k"&gt;let&lt;/span&gt; winnum &lt;span class="p"&gt;=&lt;/span&gt;winnr&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c"&gt;&amp;quot; get current window number&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; g:quickfix_size lines big for the quickfix window&lt;/span&gt;
+        exe &lt;span class="s2"&gt;&amp;quot;cope &amp;quot;&lt;/span&gt;.&lt;span class="k"&gt;g&lt;/span&gt;:quickfix_size
+&lt;span class="c"&gt;        &amp;quot; Open the quickfix window&lt;/span&gt;
+        &lt;span class="k"&gt;cw&lt;/span&gt;
+&lt;span class="c"&gt;        &amp;quot; Go to the first error&lt;/span&gt;
+        execute winnum . &lt;span class="s2"&gt;&amp;quot;wincmd w&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;endfunction&lt;/span&gt;
+
+
+    &lt;span class="k"&gt;com&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="p"&gt;-&lt;/span&gt;nargs&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt; Mi   &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:MakeIncludes&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;com&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="p"&gt;-&lt;/span&gt;nargs&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt; Mid   &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:MakeIncludes&lt;span class="p"&gt;(&amp;lt;&lt;/span&gt;args&lt;span class="p"&gt;&amp;gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;com&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="p"&gt;-&lt;/span&gt;nargs&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt; Mm  &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:Make&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c"&gt;    &amp;quot; Make in an other directory&lt;/span&gt;
+    &lt;span class="k"&gt;com&lt;/span&gt;&lt;span class="p"&gt;!&lt;/span&gt; &lt;span class="p"&gt;-&lt;/span&gt;nargs&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt; Mmd  &lt;span class="k"&gt;call&lt;/span&gt; &lt;span class="k"&gt;s&lt;/span&gt;:Make&lt;span class="p"&gt;(&amp;lt;&lt;/span&gt;args&lt;span class="p"&gt;&amp;gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;let&lt;/span&gt; &amp;amp;&lt;span class="nb"&gt;cpo&lt;/span&gt;&lt;span class="p"&gt;=&lt;/span&gt;&lt;span class="k"&gt;s&lt;/span&gt;:cpo_save
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1 id="utilisation"&gt;Utilisation&lt;a class="headerlink" href="#utilisation" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Le script s’utilise en mode commande:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;:Mm    compile dans le dossier courant&lt;/li&gt;
+&lt;li&gt;:Mmd "build/" compile dans le sous dossier. Vous devez mettre le chemin du dossier de compilation dans les guillemets. Le chemin peut être relatif ou absolu.&lt;/li&gt;
+&lt;li&gt;:Mi  compile et ajoute les includes&lt;/li&gt;
+&lt;li&gt;:Mid "build/"  compile dans un autre dossier, et ajoute les includes&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Il s’agit de mon premier plugin vim, par conséquent il est probablement codé maladroitement par moments. La fonctionnalité permettant d’ajouter automatiquement des includes est loin d’être parfaite, il se peut que vous ayez besoin d’en ajouter manuellement. Parfois, trop d’includes sont ajoutés (par exemple quand un include en inclut un autre, les 2 sont quand même ajouté alors que ce n’est pas nécessaire). Ce système fonctionne bien avec le framwork Qt avec lequel je travaille beaucoup.&lt;/p&gt;
+&lt;p&gt;J’essayerai d’améliorer ça à l’occasion, pour l’instant ça me suffit pour compiler. Une chose que j’aimerai faire, c’est pouvoir faire une compilation non bloquante : pouvoir continuer à utiliser vim durant le temps de compilation, mais ça me semble assez compliqué…&lt;/p&gt;</summary><category term="VIM"></category></entry></feed>

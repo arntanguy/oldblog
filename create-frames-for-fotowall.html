@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="fotowall, FotoWall, " />
+        <title>Create Frames For FotoWall  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/create-frames-for-fotowall.html"> Create Frames For FotoWall  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>This article is a translation of <a href="http://benoit.balon.free.fr/?p=659">Benoît Bâlon’s article (fr)</a> concerning the frame creation for Fotowall. I’m translating this article to increase the reach of his work, and meet the ever growing reclamations for more frames.</p>
+<p>The few frames proposed as default in Fotowall aren’t always enough to fill up the user’s creativity. Luckily, this software uses only standards, namely SVG for the frames realisation. Thus, it is rather simple to create new frames, though… two little constraints must be respected  :</p>
+<ul>
+<li>Drawing an SVG image require the use of a SVG manipulation software, which is not that complicated, but can certainly repel more than one.</li>
+<li>Following a certain amount of indications, once again concerning the SVG, for a perfect display in Fotowall… And there, I lost half my readers (which must represent an arm or a foot)…</li>
+</ul>
+<p>Before I suggest a solution to avoid these to constraints, and thus make the integration of a "simple drawing" as a frame in Fotowall easier, we will see how these famous frames works.</p>
+<p>As said before, the frames are based on SVG drawings. In order to be used in Fotowall, these are cut in 9 pieces, indentified by a label inside the SVG file. The following illustration represents these 9 pieces, the pink area correspond to the position of a canvas’ photo.</p>
+<p><img alt="Fotowall's Frame Grid" src="http://arntanguy.no-ip.org/images/fotowall/frames/frame_grid.jpg" /></p>
+<p>The labels displayed on each piece, such as "topleft" or "bottom", correspond to the different ID on which Fotowall depends on. Without these ID, Fotowall won’t be able to use the frame, and the outline of the photo, be it of your nephew or of Médor, will desperately remains empty. To these 9 pieces, adds up 4 other elements, represented by arrows above. Although they appear while the vectorial drawing is edited, they are invisible inside Fotowall, but are nonetheless necessary. These, identified by the IDs "hint-[...]-margin", are used to define the width of the visible outline. Thus, if we take the example of the left arrow, here is its impact on the left image:</p>
+<ul>
+<li>If the object "hint-left-margin" is as long as the image "left", then this image appears in its whole width</li>
+<li>If the object "hint-left-margin" is longer than the image "left", then a space appears between this image and the border of the photo. This space is automatically filled with the background image "center", which exceed the photo’s from on the left side.</li>
+<li>If the object "hint-left-margin" is less long than the image "left", then the latter is partially covered with the photo.</li>
+</ul>
+<p>Mathematically, the distance between the space zone and the covered zone, is the difference of length between the element "hint-[...]-margin" and each of the concerned images (the 3 on the left, right, top, bottom): if the frame is 5 pixels and the margin is 10 pixels, there will be a gap of 5 pixels between the frame and the photo.</p>
+<p>A little detail that is worth mentioning, the images "top", "left", "bottom" and "right" will be automatically stretched according to the photo’s size. From here, we realise that unfortunately it’s hard to come up with a frame composed of pattern supporting to be bent… The following example illustrate rather well this problem. Never mind that ! It’s already possible to do enough to have fun, and these few limitations will probably be lifted with time.</p>
+<p><img alt="The borders being stretched, the patterns are bent" src="http://arntanguy.no-ip.org/images/fotowall/frames/exemple_motif_deforme.jpg" /></p>
+<p>We saw that a frame is composed of 9 + 4 graphical elements in an SVG file. To avoid entering the IDs of these elements manually inside a SVG file (which is a mere XML structured file), in Inkscape it is possible to enter these after a right click on each of these elements, as illustrated below.</p>
+<p><img alt="Editing in Inkscape" src="http://arntanguy.no-ip.org/images/fotowall/frames/inkscape_property.jpg" /></p>
+<p>With the information we just studied, we can see that creating a frame can me done without to much difficulty, but is nonetheless a tedious work, which can really become a bother when you try to use more colour schemes for a single frame. And, of course, not everyone is confortable with vectorial drawing!
+In this case, why not created a bitmap (JPG, PNG…) frame with an image software such as Gimp, and then convert it in an SVG frame ready to use in Fotowall?</p>
+<p>As we briefly said before, an SVG file is a mere XML file. Luckily enough, there are plenty of linux command line tools, and Bash (or any other *sh, not to be -too- sectarian) is the star when it come to create files automatically!</p>
+<p>The temptation to create such a program was way too high. Thus, here come a
+script which will allow us to free ourselves from the cutting and SVG
+conversion : <a href="http://benoit.balon.free.fr/wp-content/uploads/fotowall_frame_compiler.zip">fotowall_frame_compiler.zip</a></p>
+<p>Once uncompressed, the use of this script, though requiring the use of a dark and strange screen, the one we call "Terminal", is really simple to use. Just look:</p>
+<div class="highlight"><pre>    ./fotwall_frame_compiler.sh image.png
+</pre></div>
+
+
+<p>This script can work with a unique parameter, namely the image to convert. In this case, the 9 frame’s pieces will be as often as possible of equal height and width. For a better rendering, try to prefer dimensions which are multiple of 3 from the begining. In output, the SVG file is created, using the name of the original picture and replacing the extension with ".svg" (which gives in our example image.png &gt; image.svg).</p>
+<p>But we can as well have a frame’s outline as high or wide (or both) different from the one reserved to the photo position. Taking back the example of the first illustration, we clearly see that the height of "top" and "bottom" is not the same as the height of "center". In this case, it will be necessary to know the exact size we want to give to "center" once transformed into SVG. In Gimp, it is for instance possible to measure this sone with the rectangular selection tool. Once the height and width are known, we just have to add these two parameters to the script:</p>
+<div class="highlight"><pre>    ./fotowall_frame_compiler.sh image.png 150 130
+</pre></div>
+
+
+<p>This script can work with a unique parameter, namely the image to convert. In this case, the 9 frame’s pieces will be as often as possible of equal height and width. For a better rendering, try to prefer dimensions which are multiple of 3 from the begining. In output, the SVG file is created, using the name of the original picture and replacing the extension with ".svg" (which gives in our example image.png &gt; image.svg).</p>
+<p>But we can as well have a frame’s outline as high or wide (or both) different from the one reserved to the photo position. Taking back the example of the first illustration, we clearly see that the height of "top" and "bottom" is not the same as the height of "center". In this case, it will be necessary to know the exact size we want to give to "center" once transformed into SVG. In Gimp, it is for instance possible to measure this sone with the rectangular selection tool. Once the height and width are known, we just have to add these two parameters to the script:</p>
+<div class="highlight"><pre>    ./fotowall_frame_compiler.sh image.png 150 130
+</pre></div>
+
+
+<p>The first number represents the width in pixels, the second represents the height. Considering that the "center" area is perfectly centred, the script is capable of calculating the width and height of each one of the 9 parts, and to place them within the SVG file. In short, there is nothing left to do, the frame is immediately usable within Fotowall! If the rendering is not perfect (a gap of 1 or 2 pixels is always possible), you just have to play directly on the two values of the command line, and reload the frame in Fotowall.</p>
+<p>To illustrate all of this, here comes a more concrete example:</p>
+<p><img alt="Example of splitting images" src="http://arntanguy.no-ip.org/images/fotowall/frames/exemples_decoupages.jpg" /></p>
+<p>However, this script requires one or two programs, which are available within the repository of every good GNU/Linux distribution:</p>
+<ul>
+<li>base64: it should be installed by default, this software can store each of the 9 images directly inside the SVG file.</li>
+<li>ImageMagick : the convert and identify commands are overused in this script. A version 6.5.8-9 at least is required for the automatic splitting in 9 images.</li>
+<li>Inkscape is not really required anymore, but it would be too bad not to use it...</li>
+</ul>
+<p><strong>Warning:</strong> this script created temporarily 9 PNG images in the directory.
+These 9 elements are then stored within the SVG file, after being split and
+numbered as follow by ImageMagick (using the example above) : image_0.png,
+image_1.png, … , image_8.png. Please mind not having an important picture named
+the same, otherwise it will be overwritten. <em>If someone is motivated to create
+a proper warning and management of these kind of problems, feel free to do so,
+it would be greatly appreciated</em>.</p>
+<p>After seeing how the frames works, a script allows us to free ourselves from a certain amount of boring steps (labelling, splitting…), and thus we can concentrate on the pure graphical realisation of the image. Save the images in PNG, as it is the only format to benefit from both colour and transparency.</p>
+<p>By way of conclusion, we can summarise the main parts adressed here concerning the Fotowall’s frames:</p>
+<ul>
+<li>They are in SVG format, and can be drawn using one of the vectorial manipulation programs, such as Inkscape.</li>
+<li>A frame is composed of 9 elements : the 4 corners, the 4 borders, and the center. To these 9 elements, adds up 4 others for the distance between the border of the frame and the border of the photo.</li>
+<li>Each of the elements is given a precise ID within the SVG file.</li>
+<li>The borders being stretched, the patterns are bent, which for now put a small limitation on your creativity.</li>
+<li>It is possible to avoid all the SVG part, and created a frame from bitmaps (once again, favour the PNG format) using the script fotowall_frame_compiler (needs GNU/Linux and a recent version of ImageMagik).</li>
+</ul>
+<p>A huge thanks to <em>Benoît Bâlon</em> for this article, I hope that my approximative translation didn’t rip too much of the original essence of the article.</p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-fotowall-create-frames"
+                href="http://arntanguy.no-ip.org/create-frames-for-fotowall.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-fotowall-create-frames';
+    var disqus_url = 'http://arntanguy.no-ip.org/create-frames-for-fotowall.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2010-10-27T00:00:00+02:00">Oct 27, 2010</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#fotowall-ref">FotoWall</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#fotowall-ref">fotowall
+                    <span>5</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

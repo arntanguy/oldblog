@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="blender, ogre3D, 3D, Programmation, " />
+        <title>Créez Vos Mesh Ogre Sous Blender !  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/creez-vos-mesh-ogre-sous-blender.html"> Créez Vos Mesh Ogre Sous Blender !  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>Si vous aimez le logiciel de modélisation 3D Blender, vous serez sans doute ravi de l’utiliser pour créer votre monde dans votre jeu utilisant le moteur Ogre.
+La bonne nouvelle, c’est que c’est d’une simplicité impressionnante, je vais profiter de ce billet pour me faire un petit mémo sur comment faire, ainsi que comment utiliser la technique de l’UV mapping avec Blender (je débute avec la 3D, que ça soit en programmation ou modélisation).</p>
+<p>L’exemple présenté ici sera fait sur un simple cube, que l’on va texturer, et intégrer dans un projet Ogre.</p>
+<h1 id="installation-du-script-dexportation-ogre-meshes-exporter">Installation du script d’exportation OGRE Meshes Exporter<a class="headerlink" href="#installation-du-script-dexportation-ogre-meshes-exporter" title="Permanent link">&para;</a></h1>
+<h2 id="sous-ubuntu">Sous Ubuntu<a class="headerlink" href="#sous-ubuntu" title="Permanent link">&para;</a></h2>
+<p>Tout d’abord, vous aurez besoin du script d’exportation pour Ogre. Sous Ubuntu pour l’installer, il suffit de faire</p>
+<div class="highlight"><pre>    sudo aptitude install blender-ogrexml
+</pre></div>
+
+
+<h2 id="sous-une-autre-distribution">Sous une autre distribution<a class="headerlink" href="#sous-une-autre-distribution" title="Permanent link">&para;</a></h2>
+<p>Si vous avez une autre distribution, voici comment installer le script.</p>
+<p>Téléchargez <a href="http://www.xullum.net/lefthand/downloads/temp/BlenderExport.zip">OGRE Meshes Exporter</a>
+Copiez ogremeshesexporter.py et les sous-dossiers dans <code>~/.blender/scripts</code></p>
+<p>Note : Vous devez aussi avoir python 2.6.4 installé pour que le script fonctionne.</p>
+<h1 id="creation-du-cube-et-uv-mapping">Création du cube et UV mapping<a class="headerlink" href="#creation-du-cube-et-uv-mapping" title="Permanent link">&para;</a></h1>
+<ul>
+<li>Ouvrez Blender, créez un cube dans une nouvelle scène.</li>
+<li>Déplacez votre curseur sur la limite supérieure de la zone de modélisation jusqu’à voire une double flèche. Clic droit, puis clic gauche sur Split Area, puis clic gauche pour valider.</li>
+<li>Maintenant, dans la nouvelle fenêtre créé, passez en mode UV/ImageEditor</li>
+</ul>
+<p><a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png"><img alt="Sélection de l'UV
+Mapping" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png" /></a></p>
+<ul>
+<li>
+<p>Retournez dans la vue 3D, passez en mode editing (touche tab), sélectionnez tout le cube</p>
+</li>
+<li>
+<p>Ensuite, faites U -&gt; Unwrap (smart projection).
+Smart projection est souvent la méthode de déroulement donnant les meilleurs résultats.</p>
+</li>
+<li>
+<p>Faites ensuite Image -&gt; Open (Alt+O) et ouvrez une image de votre choix qui vous servira de texture. Vous pouvez en trouver dans le répertoire OGRE/media/materials/textures…
+Une image apparait alors dans la partie de l’UV mapping. Normallement, les vues planes des faces du cubes devraient coincider avec la taille de l’image, si ce n’est pas le cas, sélectionnez toutes les faces dans la partie UV (touche A) puis redimensionnez les en utilisant la touche s.</p>
+</li>
+</ul>
+<p>On obtient</p>
+<p><a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png"><img alt="Dépliage du Cube" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor2.png" /></a>
+<a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor3.png"><img alt="Résultat" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/uv_editor3.png" /></a></p>
+<ul>
+<li>Allez dans la vue 3D, et faites Alt+Z pour passer en mode texturé. Normalement vous devriez voir la texture.</li>
+<li>Il ne reste plus qu’à assigner un matériau au cube, et à exporter.
+Ouvrez le panneau Shading (F5), puis créez un nouveau matériau.
+Cliquez sur Tex Face.</li>
+</ul>
+<h2 id="exportation">Exportation<a class="headerlink" href="#exportation" title="Permanent link">&para;</a></h2>
+<p>Faites Fichier-&gt;Exporter-&gt;Ogre Meshes.
+Là, vous avez la fenêtre du bas qui se modifie. Cliquez sur « Game Engine Materials » et « OgreXMLConverter ». Le fait de sélectionner OgreXMLConverter appellera automatiquement le programme d’Ogre du même nom qui est chargé de convertir le fichier XML du mesh en des fichiers de mesh que le moteur comprend.
+Cliquez sur « Exporter ».</p>
+<p><a href="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/export.png"><img alt="Export" src="http://arntanguy.no-ip.org/images/programmation/ogre3d/blender/export.png" /></a></p>
+<p>Sublime, magnifique, perfect, vous venez de créer votre premier Mesh pour OGRE. Mais comment l’utiliser maintenant ? Suivez le guide.</p>
+<h1 id="utiliser-le-mesh-dans-ogre">Utiliser le mesh dans OGRE<a class="headerlink" href="#utiliser-le-mesh-dans-ogre" title="Permanent link">&para;</a></h1>
+<p>Dans cette partie, je supposerai que vous connaissez au moins les bases de OGRE, c’est à dire les premiers tutoriels du wiki officiel, au moins jusqu’à la partie permettant de charger un mesh.</p>
+<p>Tout d’abord, il va falloir placer les fichiers où il faut, c’est à dire… où vous voulez. Je vous conseille néamoins de respecter la structure habituelle de OGRE, c’est à dire</p>
+<div class="highlight"><pre>    <span class="o">-</span> <span class="n">Ogre</span> <span class="p">(</span><span class="n">un</span> <span class="n">dossier</span> <span class="n">dans</span> <span class="n">lequel</span> <span class="n">vous</span> <span class="n">placerez</span> <span class="n">vos</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">par</span> <span class="n">exemple</span> <span class="n">dans</span> <span class="n">le</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">de</span> <span class="n">votre</span> <span class="n">jeu</span><span class="p">,</span> <span class="n">o</span><span class="err">ù</span> <span class="n">ailleurs</span><span class="p">).</span>
+    <span class="err">—</span><span class="o">&gt;</span> <span class="n">models</span> <span class="o">:</span> <span class="n">vous</span> <span class="n">placerez</span> <span class="n">dans</span> <span class="n">ce</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">le</span> <span class="n">fichier</span> <span class="n">Cube</span><span class="mf">.001</span><span class="p">.</span><span class="n">mesh</span> <span class="n">qui</span> <span class="n">a</span> <span class="err">é</span><span class="n">t</span><span class="err">é</span> <span class="n">g</span><span class="err">é</span><span class="n">n</span><span class="err">é</span><span class="n">r</span><span class="err">é</span> <span class="n">par</span> <span class="n">le</span> <span class="n">script</span> <span class="n">d</span><span class="err">’</span><span class="n">exportation</span>
+    <span class="err">—</span><span class="o">-&gt;</span> <span class="n">materials</span> <span class="o">:</span> <span class="n">ce</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">contient</span> <span class="n">les</span> <span class="n">textures</span><span class="p">,</span> <span class="n">scripts</span><span class="p">,</span> <span class="n">enfin</span> <span class="n">bref</span> <span class="n">infos</span> <span class="n">sur</span> <span class="n">l</span><span class="err">’</span><span class="n">apparence</span>
+    <span class="err">———</span><span class="o">-&gt;</span> <span class="n">textures</span> <span class="o">:</span> <span class="n">placez</span> <span class="n">ici</span> <span class="n">votre</span> <span class="n">texture</span>
+    <span class="err">———</span><span class="o">-&gt;</span> <span class="n">scripts</span> <span class="o">:</span> <span class="n">placez</span> <span class="n">ici</span> <span class="n">le</span> <span class="n">fichier</span> <span class="n">Scene</span><span class="p">.</span><span class="n">material</span> <span class="n">g</span><span class="err">é</span><span class="n">n</span><span class="err">é</span><span class="n">r</span><span class="err">é</span> <span class="n">par</span> <span class="n">l</span><span class="err">’</span><span class="n">exportation</span>
+</pre></div>
+
+
+<p>Maintenant, il va falloir dire à Ogre où trouver les fichiers. Pour celà, modifiez le fichier ressource.cfg comme suitDans cette partie, je supposerai que vous connaissez au moins les bases de OGRE, c’est à dire les premiers tutoriels du wiki officiel, au moins jusqu’à la partie permettant de charger un mesh.</p>
+<p>Tout d’abord, il va falloir placer les fichiers où il faut, c’est à dire… où vous voulez. Je vous conseille néamoins de respecter la structure habituelle de OGRE, c’est à dire</p>
+<div class="highlight"><pre>    <span class="o">-</span> <span class="n">Ogre</span> <span class="p">(</span><span class="n">un</span> <span class="n">dossier</span> <span class="n">dans</span> <span class="n">lequel</span> <span class="n">vous</span> <span class="n">placerez</span> <span class="n">vos</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">par</span> <span class="n">exemple</span> <span class="n">dans</span> <span class="n">le</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">de</span> <span class="n">votre</span> <span class="n">jeu</span><span class="p">,</span> <span class="n">o</span><span class="err">ù</span> <span class="n">ailleurs</span><span class="p">).</span>
+    <span class="err">—</span><span class="o">&gt;</span> <span class="n">models</span> <span class="o">:</span> <span class="n">vous</span> <span class="n">placerez</span> <span class="n">dans</span> <span class="n">ce</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">le</span> <span class="n">fichier</span> <span class="n">Cube</span><span class="mf">.001</span><span class="p">.</span><span class="n">mesh</span> <span class="n">qui</span> <span class="n">a</span> <span class="err">é</span><span class="n">t</span><span class="err">é</span> <span class="n">g</span><span class="err">é</span><span class="n">n</span><span class="err">é</span><span class="n">r</span><span class="err">é</span> <span class="n">par</span> <span class="n">le</span> <span class="n">script</span> <span class="n">d</span><span class="err">’</span><span class="n">exportation</span>
+    <span class="err">—</span><span class="o">-&gt;</span> <span class="n">materials</span> <span class="o">:</span> <span class="n">ce</span> <span class="n">r</span><span class="err">é</span><span class="n">pertoire</span> <span class="n">contient</span> <span class="n">les</span> <span class="n">textures</span><span class="p">,</span> <span class="n">scripts</span><span class="p">,</span> <span class="n">enfin</span> <span class="n">bref</span> <span class="n">infos</span> <span class="n">sur</span> <span class="n">l</span><span class="err">’</span><span class="n">apparence</span>
+    <span class="err">———</span><span class="o">-&gt;</span> <span class="n">textures</span> <span class="o">:</span> <span class="n">placez</span> <span class="n">ici</span> <span class="n">votre</span> <span class="n">texture</span>
+    <span class="err">———</span><span class="o">-&gt;</span> <span class="n">scripts</span> <span class="o">:</span> <span class="n">placez</span> <span class="n">ici</span> <span class="n">le</span> <span class="n">fichier</span> <span class="n">Scene</span><span class="p">.</span><span class="n">material</span> <span class="n">g</span><span class="err">é</span><span class="n">n</span><span class="err">é</span><span class="n">r</span><span class="err">é</span> <span class="n">par</span> <span class="n">l</span><span class="err">’</span><span class="n">exportation</span>
+</pre></div>
+
+
+<p>Maintenant, il va falloir dire à Ogre où trouver les fichiers. Pour celà, modifiez le fichier ressource.cfg comme suit</p>
+<div class="highlight"><pre>    <span class="c1"># Resources required by the sample browser and most samples.</span>
+    <span class="k">[Essential]</span>
+    <span class="na">Zip</span><span class="o">=</span><span class="s">/usr/share/OGRE/media/packs/SdkTrays.zip</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/thumbnails</span>
+
+    <span class="c1"># Common sample resources needed by many of the samples.</span>
+    <span class="c1"># Rarely used resources should be separately loaded by the</span>
+    <span class="c1"># samples which require them.</span>
+    <span class="k">[Popular]</span>
+    <span class="na">FileSystem</span><span class="o">=</span><span class="s">/usr/share/OGRE/media/fonts</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/materials/programs</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/materials/scripts</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/materials/textures</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/materials/textures/nvidia</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/models</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/particle</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/DeferredShadingMedia</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/PCZAppMedia</span>
+<span class="s">    FileSystem=/usr/share/OGRE/media/RTShaderLib</span>
+
+    <span class="c1"># MODIFIEZ ICI : mettez le chemin des répertoires que vous venez de créer</span>
+    <span class="na">FileSystem</span><span class="o">=</span><span class="s">/media/data/programmation/3D/ogre/media/materials/scripts</span>
+<span class="s">    FileSystem=/media/data/programmation/3D/ogre/media/materials/textures</span>
+<span class="s">    FileSystem=/media/data/programmation/3D/ogre/media/models</span>
+
+    <span class="na">Zip</span><span class="o">=</span><span class="s">/usr/share/OGRE/media/packs/cubemap.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/cubemapsJS.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/dragon.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/fresneldemo.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/ogretestmap.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/ogredance.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/Sinbad.zip</span>
+<span class="s">    Zip=/usr/share/OGRE/media/packs/skybox.zip</span>
+
+    <span class="k">[General]</span>
+    <span class="na">FileSystem</span><span class="o">=</span><span class="s">/usr/share/OGRE/media</span>
+</pre></div>
+
+
+<p>Plus qu’à tester ça sur un exemple, prenons celui du wiki officiel :</p>
+<div class="highlight"><pre>    <span class="err">#</span><span class="n">include</span> <span class="s">&quot;ExampleApplication.h&quot;</span>
+    <span class="k">class</span> <span class="nc">TutorialApplication</span> <span class="o">:</span> <span class="k">public</span> <span class="n">ExampleApplication</span>
+    <span class="p">{</span>
+    <span class="nl">protected:</span>
+    <span class="nl">public:</span>
+        <span class="n">TutorialApplication</span><span class="p">()</span>
+        <span class="p">{</span>
+        <span class="p">}</span>
+
+        <span class="o">~</span><span class="n">TutorialApplication</span><span class="p">()</span>
+        <span class="p">{</span>
+        <span class="p">}</span>
+    <span class="nl">protected:</span>
+        <span class="kt">void</span> <span class="n">createScene</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">mSceneMgr</span><span class="o">-&gt;</span><span class="n">setAmbientLight</span><span class="p">(</span> <span class="n">ColourValue</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="p">)</span> <span class="p">);</span>
+            <span class="n">Entity</span> <span class="o">*</span><span class="n">ent1</span> <span class="o">=</span> <span class="n">mSceneMgr</span><span class="o">-&gt;</span><span class="n">createEntity</span><span class="p">(</span> <span class="s">&quot;Test&quot;</span><span class="p">,</span> <span class="s">&quot;Cube.001.mesh&quot;</span> <span class="p">);</span>
+            <span class="n">SceneNode</span> <span class="o">*</span><span class="n">node1</span> <span class="o">=</span> <span class="n">mSceneMgr</span><span class="o">-&gt;</span><span class="n">getRootSceneNode</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">createChildSceneNode</span><span class="p">(</span> <span class="s">&quot;TestNode&quot;</span> <span class="p">);</span>
+            <span class="n">node1</span><span class="o">-&gt;</span><span class="n">attachObject</span><span class="p">(</span> <span class="n">ent1</span> <span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
+
+    <span class="err">#</span><span class="k">if</span> <span class="n">OGRE_PLATFORM</span> <span class="o">==</span> <span class="n">OGRE_PLATFORM_WIN32</span>
+    <span class="err">#</span><span class="n">define</span> <span class="n">WIN32_LEAN_AND_MEAN</span>
+    <span class="err">#</span><span class="n">include</span> <span class="s">&quot;windows.h&quot;</span>
+
+    <span class="n">INT</span> <span class="n">WINAPI</span> <span class="n">WinMain</span><span class="p">(</span> <span class="n">HINSTANCE</span> <span class="n">hInst</span><span class="p">,</span> <span class="n">HINSTANCE</span><span class="p">,</span> <span class="n">LPSTR</span> <span class="n">strCmdLine</span><span class="p">,</span> <span class="n">INT</span> <span class="p">)</span>
+    <span class="err">#</span><span class="k">else</span>
+    <span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+    <span class="err">#</span><span class="n">endif</span>
+    <span class="p">{</span>
+        <span class="c1">// Create application object</span>
+        <span class="n">TutorialApplication</span> <span class="n">app</span><span class="p">;</span>
+
+        <span class="n">try</span> <span class="p">{</span>
+            <span class="n">app</span><span class="p">.</span><span class="n">go</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">catch</span><span class="p">(</span> <span class="n">Exception</span><span class="o">&amp;</span> <span class="n">e</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="err">#</span><span class="k">if</span> <span class="n">OGRE_PLATFORM</span> <span class="o">==</span> <span class="n">OGRE_PLATFORM_WIN32</span>
+            <span class="n">MessageBox</span><span class="p">(</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">(),</span> <span class="s">&quot;An exception has occurred!&quot;</span><span class="p">,</span> <span class="n">MB_OK</span> <span class="o">|</span> <span class="n">MB_ICONERROR</span> <span class="o">|</span> <span class="n">MB_TASKMODAL</span><span class="p">);</span>
+    <span class="err">#</span><span class="k">else</span>
+            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;An exception has occurred: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+                    <span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">());</span>
+    <span class="err">#</span><span class="n">endif</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<p>Voilà, plus qu’à compiler, et à lancer le programme. Normallement, sous vos yeux ébahis, le cube apparait, texturé tout comme il faut.</p>
+<h1 id="problemes">Problèmes<a class="headerlink" href="#problemes" title="Permanent link">&para;</a></h1>
+<p>Voici quelques problèmes que j’ai rencontré, et comment les éviter :</p>
+<ul>
+<li>Si l’application ne démarre pas, vous avez probablement oublié de placer le fichier mesh Cube.001.mesh dans votre répertoire models/, ou alors vous n’avez pas spécifié correctement sa position dans le fichier ressources.cfg</li>
+<li>Si le cube n’est pas texturé, vérifiez que vous avez bien un fichier Scene.material dans votre dossier script, et que son emplacement est correctement spécifié dans le fichier ressources.cfg</li>
+</ul>
+<p>Amusez vous bien, et si je n’ai pas été clair, n’hésitez pas à demander des précisions dans les commentaires.</p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-create-mesh-ogre-blender"
+                href="http://arntanguy.no-ip.org/creez-vos-mesh-ogre-sous-blender.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-create-mesh-ogre-blender';
+    var disqus_url = 'http://arntanguy.no-ip.org/creez-vos-mesh-ogre-sous-blender.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2010-03-04T00:00:00+01:00">Mar 4, 2010</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#programmation-ref">Programmation</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#3d-ref">3D
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#blender-ref">blender
+                    <span>2</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#ogre3d-ref">ogre3D
+                    <span>1</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="programmation, opengl, glsl, OpenGL, " />
+        <title>Creating a Skybox from a fullscreen quad!  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html"> Creating a Skybox from a fullscreen quad!  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>Creating a skybox is commonly done by either rendering an infite cube or
+sphere. Both methods are working nicely, but require to set up VBOs, transfer
+data to the GPU... Granted, that's far from the costlier thing you can do, but
+then every little bit counts ;)</p>
+<p>In this article, I will show you how to create a skybox by creating a
+fullscreen quad in a geometry shader and applying an inverse projection to get
+the eye direction as it would be if we were to render a cube. </p>
+<p>Why, will you ask me? Two reasons, it's fun and it's convenient!</p>
+<p>First, let me thank "msell" for <a href="http://gamedev.stackexchange.com/questions/60313/skyboxes-using-glsl-version-330">the idea</a>.</p>
+<p><img alt="Skybox using a plane" src="http://arntanguy.no-ip.org/images/programmation/opengl/skybox_plane.png" /></p>
+<p>The result is quite interesting:</p>
+<ul>
+<li>Notice how the center is of perfect resolution? That's because no distortion
+  is applied there, so whatever your environment map resolution was will be
+  preserved.</li>
+<li>Notice how the sides are "stretched"? That's because the texture is virtally
+  projected on a cube, and thus appears stretched towards us. This gives a
+  really deep impression of depth, however it comes at the cost of a little bit
+  of motion blur. This side effect could be very useful for designing skyboxes
+  for racing games!
+  For other types of games, by tweaking the matrices inverted, this effect
+  could be lessened.</li>
+</ul>
+<h2 id="geometry-shader">Geometry shader<a class="headerlink" href="#geometry-shader" title="Permanent link">&para;</a></h2>
+<p>The role of this geometry shader is to emit a fullscreen quad, and send the
+view vectors corresponding to each of the corners. These view vectors will be
+interpolated when being passed to the fragment shader, resulting in view
+vectors for every part of the skybox, that can be used, for instance to fetch
+texture information from a samplerCube.</p>
+<div class="highlight"><pre>    <span class="err">#</span><span class="n">version</span> <span class="mi">330</span> <span class="n">core</span>
+
+    <span class="k">uniform</span> <span class="k">mat4</span> <span class="n">uProjectionMatrix</span><span class="p">;</span>
+    <span class="k">uniform</span> <span class="k">mat4</span> <span class="n">uWorldToCameraMatrix</span><span class="p">;</span>
+
+    <span class="n">smooth</span> <span class="k">out</span> <span class="k">vec3</span> <span class="n">eyeDirection</span><span class="p">;</span>
+
+    <span class="n">layout</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="k">in</span><span class="p">;</span>
+    <span class="n">layout</span><span class="p">(</span><span class="n">triangle_strip</span><span class="p">,</span> <span class="n">max_vertices</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span> <span class="k">out</span><span class="p">;</span>
+
+    <span class="k">void</span> <span class="n">main</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">vec4</span> <span class="n">corner1</span> <span class="o">=</span> <span class="k">vec4</span><span class="p">(</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span> <span class="p">);</span>
+        <span class="k">vec4</span> <span class="n">corner2</span> <span class="o">=</span> <span class="k">vec4</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span> <span class="p">);</span>
+        <span class="k">vec4</span> <span class="n">corner3</span> <span class="o">=</span> <span class="k">vec4</span><span class="p">(</span> <span class="mf">1.0</span><span class="p">,</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span> <span class="p">);</span>
+        <span class="k">vec4</span> <span class="n">corner4</span> <span class="o">=</span> <span class="k">vec4</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span> <span class="p">);</span>
+        <span class="c1">// Inverse matrix is costly, should be precalculated</span>
+        <span class="c1">// This is effectively a non-issue there as it is only computed four times</span>
+        <span class="c1">// and would probably be calculated slower on the CPU (unless the view is</span>
+        <span class="c1">// fixed, then it&#39;s obviously faster to compute it once and for all).</span>
+        <span class="k">mat4</span> <span class="n">inverseProjection</span> <span class="o">=</span> <span class="n">inverse</span><span class="p">(</span><span class="n">uProjectionMatrix</span><span class="p">);</span>
+        <span class="k">mat3</span> <span class="n">inverseModelview</span> <span class="o">=</span> <span class="n">transpose</span><span class="p">(</span><span class="k">mat3</span><span class="p">(</span><span class="n">uWorldToCameraMatrix</span><span class="p">));</span>
+
+        <span class="n">gl_Position</span> <span class="o">=</span> <span class="n">corner1</span><span class="p">;</span>
+        <span class="n">eyeDirection</span> <span class="o">=</span> <span class="o">-</span><span class="n">inverseModelview</span> <span class="o">*</span> <span class="p">(</span><span class="n">inverseProjection</span> <span class="o">*</span> <span class="n">corner1</span><span class="p">).</span><span class="n">xyz</span><span class="p">;</span>
+        <span class="n">EmitVertex</span><span class="p">();</span>
+
+        <span class="n">gl_Position</span> <span class="o">=</span> <span class="n">corner2</span><span class="p">;</span>
+        <span class="n">eyeDirection</span> <span class="o">=</span> <span class="o">-</span><span class="n">inverseModelview</span> <span class="o">*</span> <span class="p">(</span><span class="n">inverseProjection</span> <span class="o">*</span> <span class="n">corner2</span><span class="p">).</span><span class="n">xyz</span><span class="p">;</span>
+        <span class="n">EmitVertex</span><span class="p">();</span>
+
+        <span class="n">gl_Position</span> <span class="o">=</span> <span class="n">corner3</span><span class="p">;</span>
+        <span class="n">eyeDirection</span> <span class="o">=</span> <span class="o">-</span><span class="n">inverseModelview</span> <span class="o">*</span> <span class="p">(</span><span class="n">inverseProjection</span> <span class="o">*</span> <span class="n">corner3</span><span class="p">).</span><span class="n">xyz</span><span class="p">;</span>
+        <span class="n">EmitVertex</span><span class="p">();</span>
+
+        <span class="n">gl_Position</span> <span class="o">=</span> <span class="n">corner4</span><span class="p">;</span>
+        <span class="n">eyeDirection</span> <span class="o">=</span> <span class="o">-</span><span class="n">inverseModelview</span> <span class="o">*</span> <span class="p">(</span><span class="n">inverseProjection</span> <span class="o">*</span> <span class="n">corner4</span><span class="p">).</span><span class="n">xyz</span><span class="p">;</span>
+        <span class="n">EmitVertex</span><span class="p">();</span>
+
+        <span class="n">EndPrimitive</span><span class="p">();</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<h2 id="fragment-shader">Fragment shader<a class="headerlink" href="#fragment-shader" title="Permanent link">&para;</a></h2>
+<p>Nothing fancy here, we only need to use the eyeDirection vector interpolated
+from the geometry shader to fetch the texture in a samplerCube.</p>
+<div class="highlight"><pre>    <span class="err">#</span><span class="n">version</span> <span class="mi">330</span>
+
+    <span class="k">uniform</span> <span class="k">samplerCube</span> <span class="n">cubemap</span><span class="p">;</span>
+
+    <span class="n">smooth</span> <span class="k">in</span> <span class="k">vec3</span> <span class="n">eyeDirection</span><span class="p">;</span>
+
+    <span class="k">out</span> <span class="k">vec4</span> <span class="n">fragmentColor</span><span class="p">;</span>
+
+    <span class="k">void</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">fragmentColor</span> <span class="o">=</span> <span class="n">texture</span><span class="p">(</span><span class="n">cubemap</span><span class="p">,</span> <span class="n">eyeDirection</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<p>When rendering it, you need to disable depth testing, so that the fullscreen
+quad always appear behind every other object.
+Then just generate an empty VAO to activate it:</p>
+<div class="highlight"><pre>    <span class="n">glBindVertexArray</span><span class="p">(</span> <span class="n">vao_skybox</span> <span class="p">);</span>
+    <span class="n">glDrawArrays</span><span class="p">(</span> <span class="n">GL_POINTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="p">);</span>
+    <span class="n">glBindVertexArray</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-plane_skybox"
+                href="http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-plane_skybox';
+    var disqus_url = 'http://arntanguy.no-ip.org/creating-a-skybox-from-a-fullscreen-quad.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2014-01-21T00:00:00+01:00">Jan 21, 2014</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#opengl-ref">OpenGL</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#glsl-ref">glsl
+                    <span>4</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#opengl-ref">opengl
+                    <span>3</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                    <span>10</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

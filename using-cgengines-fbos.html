@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="programmation, opengl, FBO, glsl, OpenGL, " />
+        <title>Using CGEngine's FBOs  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/using-cgengines-fbos.html"> Using CGEngine's FBOs  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>Create a FBO:</p>
+<div class="highlight"><pre>    <span class="n">cg</span><span class="o">::</span><span class="n">FBO</span> <span class="n">fbo</span> <span class="o">=</span> <span class="n">cg</span><span class="o">::</span><span class="n">FBO</span><span class="p">(</span><span class="n">windowSize</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="n">windowSize</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">cg</span><span class="o">::</span><span class="n">FBO</span><span class="o">::</span><span class="n">COLOR</span><span class="p">);</span>
+</pre></div>
+
+
+<p>Link its internal texture to rendering shader (the one used to render on a
+visible fullscreen quad for instance).</p>
+<div class="highlight"><pre>    <span class="n">cg</span><span class="o">::</span><span class="n">Shader</span> <span class="n">shader</span><span class="p">;</span>
+    <span class="n">shader</span><span class="p">.</span><span class="n">loadVertexShaderFromFile</span><span class="p">(</span><span class="s">&quot;../src/fullscreen_quad.vert&quot;</span><span class="p">);</span>
+    <span class="n">shader</span><span class="p">.</span><span class="n">loadGeometryShaderFromFile</span><span class="p">(</span><span class="s">&quot;../src/fullscreen_quad.geom&quot;</span><span class="p">);</span>
+    <span class="n">shader</span><span class="p">.</span><span class="n">loadFragmentShaderFromFile</span><span class="p">(</span><span class="s">&quot;../src/fullscreen_quad.frag&quot;</span><span class="p">);</span>
+    <span class="c1">// Activate shader</span>
+    <span class="n">shader</span><span class="p">();</span>
+    <span class="c1">// Link texture</span>
+    <span class="n">shader</span><span class="p">.</span><span class="n">setTexture</span><span class="p">(</span><span class="s">&quot;Texture&quot;</span><span class="p">,</span> <span class="n">fbo</span><span class="p">.</span><span class="n">getColorTextureId</span><span class="p">());</span>
+</pre></div>
+
+
+<p>Do the linking texture step only <em>once</em> before the rendering. There is no point in linking it every time! Anyway that wouldn't work properly if you were to do that.</p>
+<p>Now you can activate the FBO in the render loop and render on it:</p>
+<div class="highlight"><pre>    <span class="c1">// Activate render to FBO</span>
+    <span class="n">fbo</span><span class="p">.</span><span class="n">renderToFBO</span><span class="p">();</span>
+    <span class="c1">// Clear the FBO (equivalent to glClear(...))</span>
+    <span class="n">fbo</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     *  drawing...</span>
+<span class="cm">     *  We fill the array and then activate the Vertex Attrib 0</span>
+<span class="cm">     **/</span>
+    <span class="n">shader</span><span class="p">();</span>
+    <span class="n">glVertexAttribPointer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">GL_FLOAT</span><span class="p">,</span> <span class="n">GL_FALSE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">vertices</span><span class="p">);</span>
+    <span class="n">glEnableVertexAttribArray</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="c1">// Draw triangles</span>
+    <span class="n">glDrawArrays</span><span class="p">(</span><span class="n">GL_TRIANGLES</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+    <span class="c1">// Disable Vertex array when not needed anymore</span>
+    <span class="n">glDisableVertexAttribArray</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+
+
+<p>The rendering part on the FBO is finished. After this step, you should have a triangle drawn on the FBO's texture.
+All that's left to do is display the texture to check whether everything is fine.
+This can be done using a fullscreen quad. The code below uses a geometric
+shader to generate the quad, and a fragment shader to texture it with the
+previously generated texture.
+Note that we don't need to bind the FBO's texture to the shader since this has
+been done <strong><em>before</em></strong> the rendering loop.</p>
+<div class="highlight"><pre>    <span class="n">cg</span><span class="o">::</span><span class="n">FBO</span><span class="o">::</span><span class="n">renderToScreen</span><span class="p">();</span>
+    <span class="n">shader</span><span class="p">();</span>
+
+    <span class="cm">/**</span>
+<span class="cm">     * Issue a dummy VAO call to send one point to the graphics card.</span>
+<span class="cm">     * It will then be able to generate a fullscreen quad</span>
+<span class="cm">     * Since we&#39;ve bound the FBO&#39;s render texture to the uniform Texture of</span>
+<span class="cm">     * the shader, we only need a sampler2D Texture; in the fragment shader</span>
+<span class="cm">     * to make it work!</span>
+<span class="cm">     **/</span>
+    <span class="n">glBindVertexArray</span><span class="p">(</span> <span class="n">vao</span> <span class="p">);</span>
+    <span class="n">glDrawArrays</span><span class="p">(</span> <span class="n">GL_POINTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="p">);</span>
+    <span class="c1">// Don&#39;t forget to clear the vertex array, or you might run into some</span>
+    <span class="c1">// ugly surprises, like segfaults on glDrawArray calls for instance.</span>
+    <span class="n">glBindVertexArray</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+
+
+<p>You can find the fullscreen quad shaders <a href="http://arntanguy.no-ip.org/fullscreen-quad-with-geometry-shaders.html">here</a></p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-using-CGEngine-fbo"
+                href="http://arntanguy.no-ip.org/using-cgengines-fbos.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-using-CGEngine-fbo';
+    var disqus_url = 'http://arntanguy.no-ip.org/using-cgengines-fbos.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2013-12-09T00:00:00+01:00">Dec 9, 2013</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#opengl-ref">OpenGL</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#fbo-ref">FBO
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#glsl-ref">glsl
+                    <span>4</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#opengl-ref">opengl
+                    <span>3</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                    <span>10</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

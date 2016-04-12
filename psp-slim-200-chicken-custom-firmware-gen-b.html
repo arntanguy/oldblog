@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="psp, Random, " />
+        <title>Psp SLIM 200 Chicken & Custom Firmware Gen B  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/psp-slim-200-chicken-custom-firmware-gen-b.html"> Psp SLIM 200 Chicken & Custom Firmware Gen B  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>J’ai pas mal galéré pour avoir ma PSP Slim 2000 fonctionnelle avec un custom firmware pour pouvoir lancer des homebrew (applications non officielles), notamment bookr permettant de lire des pdf.</p>
+<h1 id="installer-chickhen-r2">Installer chickhen r2<a class="headerlink" href="#installer-chickhen-r2" title="Permanent link">&para;</a></h1>
+<p>Tout d’abord, qu’est-ce que chickhen ? Il s’agit d’un hack exploitant une faille de la lib tiff de la psp pour permettre le lancement d’homebrew. Une fois chickhen "installé", une bonne partie des homebrews pourront être lancés. Il n’y a aucun risque pour la psp à installer chicken, en effet celui-ci n’est pas réellement installé, la mémoire flash de la psp n’est pas modifié. Chickhen est seulement chargé en mémoire, ce qui signifie que si vous éteignez totalement la psp (en maintenant le bouton off quelques secondes), il faudra le réinstaller, heureusement, cette étape est très simple.</p>
+<ol>
+<li>Téléchargez <a href="http://geenux.free.fr/downloads/Chickhen.zip">Chickhen</a></li>
+<li>Placer le dossier Chickhen dans le dossier PSP/PHOTO</li>
+<li>Placer le fichier h.bin à la racine de votre PSP</li>
+<li>Débrancher la psp, mettez l’adaptateur wlan sur on (ça ne fonctionne pas sinon, en tout cas avec ma psp), assurez vosu que le son n’est pas coupé, puis allez dans le menu Photo-&gt;memory stick, et faites croix sur le dossier Chickhen. Là, ne touchez plus à rien, ne scrollez pas, attendez quelques secondes. Il y aura un écran vert qui va apparaître, et la psp va redémarrer. Il se peut que ça ne fonctionne pas si la psp est en français, si c’est le cas, mettez la en anglais (ce que j’ai fait).</li>
+<li>Vérifiez que c’est bien installé, en allant dans le menu Settings-&gt;System Information, vous devriez voir 5.03 ChickHEN R2</li>
+</ol>
+<p>Là, normalement la plupart des <em>homebrews</em> devraient se lancer, mais ça serait dommage de s’arrêter en si bon chemin.</p>
+<h1 id="installer-le-custom-firmware-503-gen-b">Installer le custom firmware 5.03 gen B<a class="headerlink" href="#installer-le-custom-firmware-503-gen-b" title="Permanent link">&para;</a></h1>
+<p>Il s’agit d’un hack du système d’exploitation de la PSP pour lui ajouter des fonctionnalités et débloquer des choses délibérément bloquées par la psp (pour éviter le piratage des jeux par exemple). Il permettra de lancer les homebrews, les jeux au format iso, cso, boot…</p>
+<p>Vous pouvez convertir vos UMD en iso sur votre PSP grâce à ce firmware. Quel intérêt ? Temps de chargement plus rapide, consommation de batterie plus faible, vos UMD ne sont pas abimés.</p>
+<p>L’installation est expliquée assez clairement sur
+<a href="http://www.pspgen.com/custom-firmware-5-03gen-b-for-hen-psp-3000-telechargement-190694.html">pspgen</a>, je ne vais donc pas le refaire ici.</p>
+<h1 id="informations-complementaires-sur-lutilisation">Informations complémentaires sur l’utilisation.<a class="headerlink" href="#informations-complementaires-sur-lutilisation" title="Permanent link">&para;</a></h1>
+<p>Vous pouvez accéder au recovery menu, ainsi qu’au gen vsh menu, permettant de configurer la psp en appuyant sur la touche Select.</p>
+<p>Si vous désirez lancer des jeux en iso, il est conseillé de mettre UMS ISO MODE sur Sony NP9960. Si votre iso ne foncitonne pas, essayez M33 driver.</p>
+<p>J’espère que ce billet permettra d’éclaircir l’installation du custom firmware. Pour l’installer, j’ai été obligé de faire de nombreuses recherches, sur de nombreux sites/forum, alors que c’est extrêmement simple et sur (j’avais peur de bricker ma psp, et il m’a fallu voir plusieurs sites pour être convaincu que le flash0 n’était pas touché).</p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-psp-chicken-firmware"
+                href="http://arntanguy.no-ip.org/psp-slim-200-chicken-custom-firmware-gen-b.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-psp-chicken-firmware';
+    var disqus_url = 'http://arntanguy.no-ip.org/psp-slim-200-chicken-custom-firmware-gen-b.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2009-12-23T00:00:00+01:00">Dec 23, 2009</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#random-ref">Random</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#psp-ref">psp
+                    <span>1</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

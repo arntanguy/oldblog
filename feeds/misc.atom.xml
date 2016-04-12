@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/misc.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2012-02-05T00:00:00+01:00</updated><entry><title>test gallery</title><link href="http://arntanguy.no-ip.org/test-gallery.html" rel="alternate"></link><published>2012-02-05T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2012-02-05:test-gallery.html</id><summary type="html">&lt;p&gt;You want to develop your own application and test it directly your phone instead of the virtual machine? Or perhaps you just want to use some cool features of the SDK to manage your phone? Whatever the reason, here is how to do it.&lt;/p&gt;
+&lt;p&gt;First, I’ll assume that you have already installed the android SDK.&lt;/p&gt;
+&lt;p&gt;The only thing left to do, is to set-up rules for udev. Most articles are happy with giving you a list of devices and Vendor ID. Well, I’m not. These lists are often not exhaustive, and unusual android devices are not represented. There is a really simple way of figuring out this data.
+Simply use the command&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    lsusb
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It will give you a description of all your USB devices, find the one
+corresponding to your device&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    Bus 002 Device 004: ID 04e8:689e Samsung Electronics Co., Ltd
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;All the information you need is in this line : the vendor ID is 04e8, and the device id is 689e (this is a Samsung Galaxy Ace).&lt;/p&gt;
+&lt;p&gt;You just have to declare it to udev:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    sudo vim /etc/udev/rules.d/51-android.rules
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then put a line like:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nv"&gt;SUBSYSTEM&lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;usb&amp;quot;&lt;/span&gt;, ATTR&lt;span class="o"&gt;{&lt;/span&gt;idVendor&lt;span class="o"&gt;}==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;04e8&amp;quot;&lt;/span&gt;, , ATTRS&lt;span class="o"&gt;{&lt;/span&gt;idProduct&lt;span class="o"&gt;}==&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;689e&amp;quot;&lt;/span&gt;, &lt;span class="nv"&gt;MODE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;0666&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Obviously you need to set your own vendor and device ID here.&lt;/p&gt;
+&lt;p&gt;You’re all set! Next time udev will restart, your device should work!&lt;/p&gt;</summary><category term="programmation"></category><category term="android"></category><category term="linux"></category></entry></feed>

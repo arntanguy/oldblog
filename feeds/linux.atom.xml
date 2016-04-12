@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>VIM Proves The World</title><link href="http://arntanguy.no-ip.org/" rel="alternate"></link><link href="http://arntanguy.no-ip.org/feeds/linux.atom.xml" rel="self"></link><id>http://arntanguy.no-ip.org/</id><updated>2013-05-10T00:00:00+02:00</updated><entry><title>Install Ubuntu on MSI-GE60 0NC</title><link href="http://arntanguy.no-ip.org/install-ubuntu-on-msi-ge60-0nc.html" rel="alternate"></link><published>2013-05-10T00:00:00+02:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2013-05-10:install-ubuntu-on-msi-ge60-0nc.html</id><summary type="html">&lt;p&gt;Hi,
+It’s been a while since I last had a bit of trouble installing Ubuntu, so I decided to write a small article about it.
+Don’t expect screenshots, I don’t want to go back to the installer just for the sake of some nice images.&lt;/p&gt;
+&lt;p&gt;I will here explain how I installed a dualboot Windows 8/Ubuntu on my new &lt;strong&gt;MSI GE60 ONC&lt;/strong&gt; laptop.&lt;/p&gt;
+&lt;h1 id="uefi"&gt;UEFI&lt;a class="headerlink" href="#uefi" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;The main difference I encountered was the introduction of UEFI. Don’t worry if you had never heard of that before, I discovered it while installing Ubuntu on my new laptop as well! Basically, it is meant to replace the old BIOS architecture with a more flexible one.&lt;/p&gt;
+&lt;p&gt;What the &lt;a href="https://help.ubuntu.com/community/UEFI"&gt;Ubuntu documentation&lt;/a&gt; on UEFI recommends is to install both Windows and Ubuntu using the UEFI mode.&lt;/p&gt;
+&lt;p&gt;Unfortunately, for some reason that I was unable to figure out, I wasn’t able to properly boot the LiveUSB on UEFI mode: it kept on giving me a black screen (and from what I saw on the forums, I’m not the only one).&lt;/p&gt;
+&lt;p&gt;&lt;img alt="UEFI" src="http://arntanguy.no-ip.org/images/linux/UEFI.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;The workaround I used consists of booting and installing in Legacy Mode. To go into legacy mode, just press "Del." on startup to enter the BIOS, and change the "Boot" options to Legacy instead of UEFI.&lt;/p&gt;
+&lt;p&gt;Then, install the dualboot as usual (reduce windows partition size, create a new one for linux, extend the Data partition, add a swap partition).&lt;/p&gt;
+&lt;p&gt;You will also need to create a special partition for the BIOS support of Legacy. To do so, create a small partition using gparted (&amp;gt;1Mb), and set the Flag grub_bios (or something like that).&lt;/p&gt;
+&lt;p&gt;You’re done.&lt;/p&gt;
+&lt;p&gt;Now,&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;to start Linux, go into the BIOS and set it to Legacy&lt;/li&gt;
+&lt;li&gt;to start Windows, go into the BIOS and set it to UEFI&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I know, it’s quite an ugly workaround, but that did the trick, and I’m barely even starting windows, so for me going into the bios when I need to start it is not so much of a bother.&lt;/p&gt;
+&lt;p&gt;You could try using the boot-repair utility to convert the legacy booting process to UEFI. It is supposed to work quite well, however I ran into topics of users that tried it and failed. So I didn’t bother investigating any further. Let me know if you manage to do it successfully ;)&lt;/p&gt;</summary><category term="linux"></category><category term="ubuntu"></category></entry><entry><title>Install ArchLinux on Dell Latitude E5420</title><link href="http://arntanguy.no-ip.org/install-archlinux-on-dell-latitude-e5420.html" rel="alternate"></link><published>2012-03-10T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2012-03-10:install-archlinux-on-dell-latitude-e5420.html</id><summary type="html">&lt;p&gt;Je ne compte pas parler de l’installation d’ArchLinux en lui-même, bien assez de documentation existe sur le sujet.
+Je vais me contenter de préciser les parties spécifiques à ce laptop.&lt;/p&gt;
+&lt;h1 id="touchpad"&gt;Touchpad&lt;a class="headerlink" href="#touchpad" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Le touchpad n’est pas un touchpad Synaptics, ce qui complique légèrement la configuration, d’autant plus qu’un bug du noyau fait qu’il n’est pas reconnu en tant que touchpad, mais en temps que souris…
+Pour l’installer, il faut installer le paquet AUR
+&lt;a href="https://aur.archlinux.org/packages.php?ID=51343"&gt;psmouse-elantech&lt;/a&gt;, qui compilera un module du noyau linux permettant de corriger le bug.
+Voici la démarche à suivre pour le faire :&lt;/p&gt;
+&lt;p&gt;Ensuite, si vous désirez que le module soit automatiquement compilé quand c’est nécessaire (mise à jour…), mettez le dans le rc.conf&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="nv"&gt;MODULES&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;psmouse-elantech&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Ce laptop ne dispose pas de carte graphique, seulement du chipset intégré Intel. Pour le configurer, voici la démarche. Installer le paquet xf86-video-intel&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    pacman -S xf86-video-intel
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Ensuite, il faut modifier les entrée du grub, si vous désirez disposer de toutes les performances du chipset.
+Pour ce faire, éditez le fichier /boot/grub/menu.lst (en root), et modifiez le ainsi&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="c"&gt;# (0) Arch Linux&lt;/span&gt;
+    title Arch Linux
+    root &lt;span class="o"&gt;(&lt;/span&gt;hd0,2&lt;span class="o"&gt;)&lt;/span&gt;
+    kernel /boot/vmlinuz-linux &lt;span class="nv"&gt;root&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;/dev/sda3 ro i915.modeset&lt;span class="o"&gt;=&lt;/span&gt;1
+    initrd /boot/initramfs-linux.img
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;i915.modeset=1 active le module&lt;/li&gt;
+&lt;li&gt;i915.modeset=0 désactive le module
+&lt;strong&gt;Attention :&lt;/strong&gt; SI vous aviez des entrées vga dans le menu.lst, il faut les enlever !&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="linux"></category><category term="archlinux"></category></entry><entry><title>Ripper l'audio d'une vidéo avec FFMPEG.</title><link href="http://arntanguy.no-ip.org/ripper-laudio-dune-video-avec-ffmpeg.html" rel="alternate"></link><published>2011-12-19T00:00:00+01:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2011-12-19:ripper-laudio-dune-video-avec-ffmpeg.html</id><summary type="html">&lt;p&gt;Bonjour,
+Vu que j’ai eu un peu de mal à trouver comment ripper la bande son d’une vidéo (en l’occurence de youtube), j’ai fait un petit script pour le faire simplement :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    &lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+
+    &lt;span class="c"&gt;### libmp3lame required : to install&lt;/span&gt;
+    &lt;span class="c"&gt;#sudo apt-get install ffmpeg libavcodec-extra-52&lt;/span&gt;
+
+    &lt;span class="k"&gt;for &lt;/span&gt;i in &lt;span class="s2"&gt;&amp;quot;$*&amp;quot;&lt;/span&gt;; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="c"&gt;#mplayer -ao pcm &amp;quot;$i&amp;quot; -ao pcm:file=&amp;quot;$(echo &amp;quot;$i&amp;quot;|cut -d&amp;#39;.&amp;#39; -f1).mp3&amp;quot;&lt;/span&gt;
+    &lt;span class="c"&gt;# -vn remove the video&lt;/span&gt;
+    ffmpeg -i &lt;span class="s2"&gt;&amp;quot;$i&amp;quot;&lt;/span&gt; -vn -acodec libmp3lame &lt;span class="s2"&gt;&amp;quot;$(echo &amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$i&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;|cut -d&amp;#39;.&amp;#39; -f1).mp3&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Très simple à utiliser, faites juste&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    ripaudio.sh fichier1.flv fichier2.mpeg ...
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="linux"></category><category term="ffmpeg"></category><category term="audio"></category><category term="video"></category><category term="rip"></category></entry><entry><title>Useful usages of dd.</title><link href="http://arntanguy.no-ip.org/useful-usages-of-dd.html" rel="alternate"></link><published>2011-08-13T00:00:00+02:00</published><author><name>Arnaud TANGUY</name></author><id>tag:arntanguy.no-ip.org,2011-08-13:useful-usages-of-dd.html</id><summary type="html">&lt;p&gt;Hello world,
+Why bother using heavy and complicated tools to create and use ISO files? Why
+not simply consider using the &lt;strong&gt;dd&lt;/strong&gt; command?
+Granted, this command can sometimes look quite scary, especially because of
+it's impressive potential to destroy data with a misintruction.
+Still, it's a very useful command, just be careful how you use it!&lt;/p&gt;
+&lt;h1 id="create-an-iso-image-of-a-cd"&gt;Create an ISO image of a CD&lt;a class="headerlink" href="#create-an-iso-image-of-a-cd" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Data within a CD are commonly wrapped in an ISO-9660 filesystem. An ISO image
+is merely a copy of this filesystem in a single file.
+Seen like that, the solution spawns naturally: we merely neeed to do a bit by
+bit copy of the CD into a file...
+Who said &lt;strong&gt;dd&lt;/strong&gt; is meant for that?
+Just run&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    dd &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;/dev/cdrom &lt;span class="nv"&gt;of&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;cd.iso
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1 id="mount-iso"&gt;Mount ISO&lt;a class="headerlink" href="#mount-iso" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Mountin an ISO can always be useful, so here is how to do it.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    sudo mkdir /mnt/iso
+    sudo mount -t iso9660 -o loop cd.iso /mnt/iso
+    ls /mnt/iso
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1 id="create-bootable-usb-key"&gt;Create bootable USB key&lt;a class="headerlink" href="#create-bootable-usb-key" title="Permanent link"&gt;&amp;para;&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Assuming you USB key is on &lt;em&gt;/dev/sdb&lt;/em&gt;, and &lt;strong&gt;isn't mounted&lt;/strong&gt;, you can simply
+run the following command to create a bootable USB key.
+Note that it is sd&lt;strong&gt;b&lt;/strong&gt; and not sd&lt;strong&gt;b1&lt;/strong&gt;. Indeed, we do want to copy the
+bootloader and the partition table as well.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;    dd &lt;span class="nv"&gt;bs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;4M &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;bootable_iso.iso &lt;span class="nv"&gt;of&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;/dev/sdb
+&lt;/pre&gt;&lt;/div&gt;</summary><category term="linux"></category><category term="ISO"></category><category term="CD"></category><category term="bash"></category></entry></feed>

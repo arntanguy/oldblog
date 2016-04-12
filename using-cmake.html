@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="fotowall, Programmation, " />
+        <title>Using CMake  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/using-cmake.html"> Using CMake  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>Je me souviens encore des premier projets pour lesquels j’ai tenté de comprendre comment utiliser cmake pour créer les makefiles.  La doc est tout sauf claire, et le manque de tutoriels sur la base du fonctionnement de cmake manque cruellement. Je vais tâcher de remédier à ce souci, en expliquant comment compiler des projets simples avec cmake.</p>
+<h1 id="quest-ce-que-cmake">Qu’est-ce que cmake ?<a class="headerlink" href="#quest-ce-que-cmake" title="Permanent link">&para;</a></h1>
+<p>Il s’agit d’un outil permettant de ne pas avoir à écrire les Makefiles à la main. Il permet de rechercher automatiquement les librairies sur le systèmes, de régler les compilation en statique ou dynamique, de compiler aisément à partir d’un dossier séparé. C’est un réel plus pour la portabilité (cmake fonctionne sur de nombreux systèmes, et la plupart des modules peuvent trouver les lib aussi bien sous Windows, que GNU/Linux…).</p>
+<p>Cmake permet de vous affranchir de la syntaxe immonde des makefiles, et de vous contenter de décrire la manière de compilation de votre programme, de conditionner la compilation…</p>
+<h1 id="un-cmake-minimal">Un cmake minimal.<a class="headerlink" href="#un-cmake-minimal" title="Permanent link">&para;</a></h1>
+<p>Tout d’abord, voici un exemple de CMakeFile.txt (c’est le fichier que cmake lit pour le convertir en makefile) permettant de compiler avec Boost.</p>
+<div class="highlight"><pre>    <span class="nb">cmake_minimum_required</span><span class="p">(</span> <span class="s">VERSION</span> <span class="s">2.6</span> <span class="s">FATAL_ERROR</span> <span class="p">)</span>
+
+    <span class="c"># search for Boost version 1.40</span>
+    <span class="c"># Components :</span>
+    <span class="c">#filesystem, iostreams, programoptions, python, regex, serialization, signals</span>
+    <span class="c">#system, thread, wave</span>
+    <span class="nb">find_package</span><span class="p">(</span> <span class="s">Boost</span> <span class="s">1.40.0</span> <span class="s">COMPONENTS</span> <span class="s">regex</span> <span class="s">signals</span> <span class="s">FATAL_ERROR</span><span class="p">)</span>
+    <span class="nb">link_directories</span> <span class="p">(</span> <span class="o">${</span><span class="nv">Boost_LIBRARY_DIRS</span><span class="o">}</span> <span class="p">)</span>
+    <span class="nb">include_directories</span> <span class="p">(</span> <span class="o">${</span><span class="nv">Boost_INCLUDE_DIRS</span><span class="o">}</span> <span class="p">)</span>
+
+    <span class="nb">SET</span> <span class="p">(</span><span class="s">SOURCES</span>
+    <span class="s">main.cpp</span>
+    <span class="p">)</span>
+
+    <span class="nb">SET</span> <span class="p">(</span><span class="s">EXECUTABLE_NAME</span>
+    <span class="s">executable</span>
+    <span class="p">)</span>
+
+    <span class="nb">add_executable</span> <span class="p">(</span>
+    <span class="o">${</span><span class="nv">EXECUTABLE_NAME</span><span class="o">}</span>
+    <span class="o">${</span><span class="nv">SOURCES</span><span class="o">}</span>
+    <span class="p">)</span>
+
+    <span class="nb">target_link_libraries</span> <span class="p">(</span>
+    <span class="o">${</span><span class="nv">EXECUTABLE_NAME</span><span class="o">}</span>
+    <span class="o">${</span><span class="nv">Boost_LIBRARIES</span><span class="o">}</span>
+    <span class="p">)</span>
+</pre></div>
+
+
+<p>Comme vous pouvez le constater dans cet exemple, cmake gère les variables, et sa syntaxe est assez simple. Étudions plus en détail ce fichier.</p>
+<div class="highlight"><pre>    <span class="nb">cmake_minimum_required</span><span class="p">(</span> <span class="s">VERSION</span> <span class="s">2.6</span> <span class="s">FATAL_ERROR</span> <span class="p">)</span>
+</pre></div>
+
+
+<p>Cette ligne indique qu’il faut avoir la version 2.6 de cmake pour compiler, le FATAL_ERROR est facultatif, il indique à cmake de ne pas essayer de compiler et de stopper tout de suite.</p>
+<div class="highlight"><pre>    <span class="nb">find_package</span><span class="p">(</span> <span class="s">Boost</span> <span class="s">1.40.0</span> <span class="s">COMPONENTS</span> <span class="s">regex</span> <span class="s">signals</span> <span class="s">FATAL_ERROR</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Il s’agit d’une des fonctionnalités les plus intéressantes de cmake : la recherche des librairies. La fonctionnalité find_package va chercher un fichier (appelé module), permettant de rechercher la lib voulue nommée FindBoost.cmake. Chez moi ce fichier est dans "/usr/share/cmake-2.6/Modules/FindBoost.cmake".
+(si vous ne le trouvez pas, un simple <code>locate FindBoost.cmake</code> devrait le trouver).
+Pourquoi je vous indique ces détails sur le fichier ? Eh bien, parceque la lecture du fichier en question va vous fournir une mine d’information sur ce qu’il fait, quelles variables il définit, bref comment l’exploiter.
+Voici quelques extraits du header de ce fichier :</p>
+<div class="highlight"><pre>    <span class="c"># - Try to find Boost include dirs and libraries</span>
+    <span class="c"># Usage of this module as follows:</span>
+    <span class="err">#</span>
+    <span class="c"># == Using Header-Only libraries from within Boost: ==</span>
+    <span class="err">#</span>
+    <span class="c">#   find_package( Boost 1.36.0 )</span>
+    <span class="c">#   if(Boost_FOUND)</span>
+    <span class="c">#      include_directories(${Boost_INCLUDE_DIRS})</span>
+    <span class="c">#      add_executable(foo foo.cc)</span>
+    <span class="c">#   endif()</span>
+    <span class="err">#</span>
+    <span class="err">#</span>
+    <span class="c"># == Using actual libraries from within Boost: ==</span>
+    <span class="err">#</span>
+    <span class="c">#   set(Boost_USE_STATIC_LIBS   ON)</span>
+    <span class="c">#   set(Boost_USE_MULTITHREADED ON)</span>
+    <span class="c">#   find_package( Boost 1.36.0 COMPONENTS date_time filesystem system ... )</span>
+    <span class="err">#</span>
+    <span class="c">#   if(Boost_FOUND)</span>
+    <span class="c">#      include_directories(${Boost_INCLUDE_DIRS})</span>
+    <span class="c">#      add_executable(foo foo.cc)</span>
+    <span class="c">#      target_link_libraries(foo ${Boost_LIBRARIES})</span>
+    <span class="c">#   endif()</span>
+    <span class="err">#</span>
+    <span class="err">#</span>
+    <span class="c"># The components list needs to contain actual names of boost libraries only,</span>
+    <span class="c"># such as &quot;date_time&quot; for &quot;libboost_date_time&quot;.  If you&#39;re using parts of</span>
+    <span class="c"># Boost that contain header files only (e.g. foreach) you do not need to</span>
+    <span class="c"># specify COMPONENTS.</span>
+    <span class="err">#</span>
+    <span class="c"># You should provide a minimum version number that should be used. If you provide this</span>
+    <span class="c"># version number and specify the REQUIRED attribute, this module will fail if it</span>
+    <span class="c"># can&#39;t find the specified or a later version. If you specify a version number this is</span>
+    <span class="c"># automatically put into the considered list of version numbers and thus doesn&#39;t need</span>
+    <span class="c"># to be specified in the Boost_ADDITIONAL_VERSIONS variable (see below).</span>
+    <span class="err">#</span>
+    <span class="c"># NOTE for Visual Studio Users:</span>
+    <span class="c">#     Automatic linking is used on MSVC &amp;amp; Borland compilers by default when</span>
+    <span class="c">#     #including things in Boost.  It&#39;s important to note that setting</span>
+    <span class="c">#     Boost_USE_STATIC_LIBS to OFF is NOT enough to get you dynamic linking,</span>
+    <span class="c">#     should you need this feature.  Automatic linking typically uses static</span>
+    <span class="c">#     libraries with a few exceptions (Boost.Python is one).</span>
+    <span class="err">#</span>
+    <span class="c">#     Please see the section below near Boost_LIB_DIAGNOSTIC_DEFINITIONS for</span>
+    <span class="c">#     more details.  Adding a TARGET_LINK_LIBRARIES() as shown in the example</span>
+    <span class="c">#     above appears to cause VS to link dynamically if Boost_USE_STATIC_LIBS</span>
+    <span class="c">#     gets set to OFF.  It is suggested you avoid automatic linking since it</span>
+    <span class="c">#     will make your application less portable.</span>
+    <span class="err">[...]</span>
+    <span class="c"># Variables used by this module, they can change the default behaviour and</span>
+    <span class="c"># need to be set before calling find_package:</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_USE_MULTITHREADED      Can be set to OFF to use the non-multithreaded</span>
+    <span class="c">#                                boost libraries.  If not specified, defaults</span>
+    <span class="c">#                                to ON.</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_USE_STATIC_LIBS        Can be set to ON to force the use of the static</span>
+    <span class="c">#                                boost libraries. Defaults to OFF.</span>
+    <span class="err">#</span>
+    <span class="c"># Other Variables used by this module which you may want to set.</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_ADDITIONAL_VERSIONS    A list of version numbers to use for searching</span>
+    <span class="c">#                                the boost include directory.  Please see</span>
+    <span class="c">#                                the documentation above regarding this</span>
+    <span class="c">#                                annoying, but necessary variable &lt;img src=&quot;http://s0.wp.com/wp-includes/images/smilies/icon_sad.gif?m=1129645325g&quot; alt=&quot;:(&quot; class=&quot;wp-smiley&quot;&gt; </span>
+    <span class="err">#</span>
+    <span class="err">[...]</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_INCLUDE_DIRS                  Boost include directories: not cached</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_INCLUDE_DIR                   This is almost the same as above, but this one is</span>
+    <span class="c">#                                       cached and may be modified by advanced users</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_LIBRARIES                     Link to these to use the Boost libraries that you</span>
+    <span class="c">#                                       specified: not cached</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_LIBRARY_DIRS                  The path to where the Boost library files are.</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_VERSION                       The version number of the boost libraries that</span>
+    <span class="c">#                                       have been found, same as in version.hpp from Boost</span>
+    <span class="err">[...]</span>
+    <span class="c">#   Boost_${COMPONENT}_FOUND            True IF the Boost library &quot;component&quot; was found.</span>
+    <span class="err">#</span>
+    <span class="c">#   Boost_${COMPONENT}_LIBRARY          Contains the libraries for the specified Boost</span>
+    <span class="c">#                                       &quot;component&quot; (includes debug and optimized keywords</span>
+    <span class="c">#                                       when needed).</span>
+</pre></div>
+
+
+<p>Grâce aux informations contenues ici, on pourra facilement construite un CMakeFile adapté à nos besoins.
+Revenons à l’exemple :
+find_package va utiliser le fichier indiqué plus haut pour rechercher boost, le module va définir de nombreuses variable (comme on voit dans le header ci-dessus), que l’on va utiliser pour la compilation.</p>
+<div class="highlight"><pre>    <span class="nb">find_package</span><span class="p">(</span> <span class="s">Boost</span> <span class="s">1.40.0</span> <span class="s">COMPONENTS</span> <span class="s">regex</span> <span class="s">signals</span> <span class="s">FATAL_ERROR</span><span class="p">)</span>
+    <span class="nb">link_directories</span> <span class="p">(</span> <span class="o">${</span><span class="nv">Boost_LIBRARY_DIRS</span><span class="o">}</span> <span class="p">)</span>
+    <span class="nb">include_directories</span> <span class="p">(</span> <span class="o">${</span><span class="nv">Boost_INCLUDE_DIRS</span><span class="o">}</span> <span class="p">)</span><span class="err">k</span>
+</pre></div>
+
+
+<p>La ligne link_directories indique que cmake devra lier l’exécutable avec la librairie boost, ${Boost_LIBRARY_DIRS} étant une variable définie par le module appelé par find_package.
+La ligne include_directories fait de même pour le répertoire dans lequel les includes de boost sont.</p>
+<div class="highlight"><pre>    <span class="nb">SET</span> <span class="p">(</span><span class="s">SOURCES</span> <span class="s">main.cpp</span> <span class="s">autre.cpp</span><span class="p">)</span>
+    <span class="nb">SET</span> <span class="p">(</span><span class="s">EXECUTABLE_NAME</span> <span class="s">executable</span><span class="p">)</span>
+</pre></div>
+
+
+<p>On définit 2 variables SOURCES et EXECUTABLE_NAME, comme ça on aura juste à modifier à un seul endroit, et tout le reste sera modifié en conséquence.</p>
+<div class="highlight"><pre>    <span class="nb">add_executable</span> <span class="p">(</span><span class="o">${</span><span class="nv">EXECUTABLE_NAME</span><span class="o">}</span> <span class="o">${</span><span class="nv">SOURCES</span><span class="o">}</span><span class="p">)</span>
+    <span class="nb">target_link_libraries</span> <span class="p">(</span><span class="o">${</span><span class="nv">EXECUTABLE_NAME</span><span class="o">}</span> <span class="o">${</span><span class="nv">Boost_LIBRARIES</span><span class="o">}</span><span class="p">)</span>
+</pre></div>
+
+
+<p>add_executable indique à cmake qu’il faut compiler les sources contenues dans la variable SOURCE et créer un exécutable nommé par le nom défini dans la variable EXECUTABLE_NAME
+target_link_libraries indique à cmake avec quelles librairies il doit lier.</p>
+<p>Et voilà, vous avez un CMakeList pour compiler avec boost.</p>
+<div class="highlight"><pre>    mkdir build <span class="o">&amp;&amp;</span> <span class="nb">cd </span>build
+    cmake ..
+    make
+</pre></div>
+
+
+<p>Et voilà, les sources sont compilés dans le dossier build.</p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-using-cmake"
+                href="http://arntanguy.no-ip.org/using-cmake.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-using-cmake';
+    var disqus_url = 'http://arntanguy.no-ip.org/using-cmake.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2009-12-27T00:00:00+01:00">Dec 27, 2009</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#programmation-ref">Programmation</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#fotowall-ref">fotowall
+                    <span>5</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

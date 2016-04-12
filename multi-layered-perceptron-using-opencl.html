@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="programmation, opencl, neural networks, perceptron, NeuralNetworks, " />
+        <title>Multi-layered Perceptron using OpenCL  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/multi-layered-perceptron-using-opencl.html"> Multi-layered Perceptron using OpenCL  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>I recently discovered <strong>neural networks</strong>, and I was instantly very interested by the topic. I am a big fan of computer vision, 
+and have always had a feeling that this field was doomed by the sheer amount of possible combinations possible. How could we ever come up with an
+algorithm that wouldn't crash at the first unexpected input? How can we analyse complex behaviour, such as distinguishing distress in a metro when
+so much trivial noise and movements are going on? How could we ever get robots intelligent enough to cope with their environment as well, or even better than
+we do? I believe I'm starting to see a glimmer of hope in neural networks, that we could one day achieve such things, that at the moment seem like a daunting task.
+Of course a perceptron is way too simple a network for such things, but one has to start somewhere, hasn't he?</p>
+<p>I am convinced that it is utterly useless to read thousands of pages on neural networks to try and understand their behaviour. The best way to approach them
+is by trial and error. In this article, I will show you what a perceptron is, how to implement and train it using <strong>GPU computing with OpenCL</strong>. </p>
+<h1 id="what-is-a-perceptron">What is a perceptron<a class="headerlink" href="#what-is-a-perceptron" title="Permanent link">&para;</a></h1>
+<p>A perceptron is basically a binary classifier: it will either tell you that the input values you provided match with the model it that has previously
+been learnt, or tell you that they don't. That is for a single output neuron. By providing several outputs, it is possible to use
+the perceptron as a classifier, effectively separating the input set in several classes.</p>
+<p>So basically, it is a <strong>linear classifier</strong>. You're probably wondering what you have to gain using a perceptron instead of SVM (Support Vector Machine),
+or similar algorithm. Well, actually not much. The perceptron was discovered before SVM was developped, and since then, SVM has pretty much
+replaced all uses of the perceptron. </p>
+<p>Even though, the perceptron can be seen as the very basis of neural networks, and is a stepping stone on which one has to
+walk on in order to fully understand the concepts behind neural network algorithms.
+As all neural networks, it requires a great amount of inter-connected neurons to provide enough capacity to learn a given model.
+It is thus a challenge to use a perceptron to accomplish complicated classification in real-time. Also, the training task can be a daunting computation, that might have
+to be ran loads of time before fine-tuning the training to achieve the expected outcome. </p>
+<p>A fully-connected perceptron is probably the simplest neural network you could ever think of. It is composed of several layers, each containing a given number of neurons.
+Each neuron of a layer is connected to every single neuron of the following layer. Each connection has an associated weight. It is by adjusting these weights that the network will
+tune himself to any linear classification problem, of course given that the network has enough complexity for the given problem (i.e has a sufficient number of neurons and layers 
+for it to be able to learn the model). </p>
+<p>There are three types of layers:</p>
+<ul>
+<li><strong>The input layer</strong>: it is the first layer, where you set the initial data that your perceptron will be working on.</li>
+<li><strong>The hidden layers</strong>: these are all the layers between the input and output layer. They're basically the ones that will be doing all the work of learning a 
+    model and computing input values against the model in order to classify them.</li>
+<li><strong>The output layer</strong>: composed of one or several neurons. This layer represents the result of the classification, where each neuron represent a specific class. </li>
+</ul>
+<p>Each neuron value in the hidden layers and the output layer is computed as the weighted sum of all the neurons' values linked to it by the weights linking them together.</p>
+<p><img alt="Perceptron layers" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron.png" /></p>
+<p>Hopefully, neural networks are generally <strong>highly parallel algorithm</strong>, and the perceptron is probably their king.
+In this article, I will present how to implement a fully-connected perceptron using <strong>OpenCL</strong>. This article will explain in detail the training algorithm,
+along with its naive implementation. A later article will discuss a faster training algorithm, and optimizations to the kernel presented here. </p>
+<h1 id="training-algorithm-gradient-backpropagation">Training algorithm : gradient backpropagation<a class="headerlink" href="#training-algorithm-gradient-backpropagation" title="Permanent link">&para;</a></h1>
+<p>Training a perceptron is a minimization problem. We define a training set as a set of (input -&gt; output) values.
+The goal of the training is to find the weights that minimize the distance between the output computed by the 
+perceptron on the output corresponding to the same input in the training set.</p>
+<p>In this article we'll train a perceptron that is able to recognise a <strong>xor</strong> operation. 
+First of all, here is the xor truth table:</p>
+<table>
+<thead>
+<tr>
+<th>a</th>
+<th>b</th>
+<th>xor(a,b)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>So the goal of the training will be to find the weights needed for the perceptron to give the correct output for all possible inputs a and b of the 
+truth table.</p>
+<p>In order to train the weights, we will use an algorithm based on a gradient descent.
+First, let us define some notations:</p>
+<ul>
+<li><span class="math">\(n\)</span>: number of cells in layer, designed by an index <span class="math">\(i\)</span> with <span class="math">\(0 &lt;= i &lt;= n\)</span> </li>
+<li><span class="math">\(q\)</span>: number of layers</li>
+<li><span class="math">\(k\)</span>: index of an output cell</li>
+<li><span class="math">\(c_k\)</span>: expected output for output cell k for entry x</li>
+<li><span class="math">\(o_k\)</span>: computed output for output cell k for entry x</li>
+<li><span class="math">\(x_{ij}\)</span>: input value associated with link between cell i towards cell j</li>
+<li><span class="math">\(w_{ij}\)</span>: weight</li>
+<li><strong>Succ(i)</strong>: set of cells that have the output of cell i as an input </li>
+<li><strong>Pred(i)</strong>: set of cells whose output is an input of cell i</li>
+<li><span class="math">\(y_i\)</span>: weighted sum of cell i <div class="math">$$y_i = \sum{w_{ij}x_{ij}}$$</div>
+</li>
+<li><span class="math">\(o_i\)</span>: output of cell i <div class="math">$$o_i = \sigma(y_i)$$</div> where <span class="math">\(\sigma\)</span> is the sigmoid function: <div class="math">$$\sigma(x) = \frac{1}{1+e^{-x}}$$</div>
+</li>
+<li><span class="math">\(S\)</span> : Learning set</li>
+</ul>
+<p><img alt="Notations" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_notation.png" /></p>
+<p>Before getting deeper into the algorithm, let's just give an overview of what we'll have to do. First, we need to compute the value of every single neuron from the input
+to the output layer. Once we have that, we can compare the output with the expected output, and compute the gradient <span class="math">\(\delta\)</span> for the output layer.
+Then, we compute <span class="math">\(\delta\)</span> for every layer based on the value of the following layer. This is a process called backpropagation. 
+Finally we update the weight values using the neuron's and <span class="math">\(\delta\)</span> values previously computed.</p>
+<p><strong>The algorithm goes as follow</strong>:</p>
+<ul>
+<li>Randomly initialize all weights in interval <span class="math">\([-0.5, 0.5]\)</span></li>
+<li>Repeat until convergence<ul>
+<li>Pick example <span class="math">\((x, c)\)</span> in <span class="math">\(S\)</span> (x: input value, c: expected output)</li>
+<li>Compute output <span class="math">\(o\)</span> for input <span class="math">\(x\)</span></li>
+<li>For each output cell <span class="math">\(i\)</span> (in output layer)<ul>
+<li>Compute <span class="math">\(\delta_i\)</span> for each cell of the output layer: <div class="math">$$\delta_i = \sigma'(y_i)(c_i-o_i) = o_i(1-o_i)(c_i-o_i)$$</div>
+</li>
+</ul>
+</li>
+<li>For each layer from <span class="math">\(q-1\)</span> to <span class="math">\(1\)</span><ul>
+<li>Compute <span class="math">\(\delta_i\)</span> for each cell of the current layer: <div class="math">$$\delta_i = \sigma'(y_i)\sum_{k\in\text{Succ(i)}}{\delta_k w_{ki}} = o_i(1-o_i)\sum_{k\in\text{Succ(i)}}{\delta_k w_{ki}}$$</div>
+</li>
+</ul>
+</li>
+<li>Update weights: for each weight <span class="math">\(w_{ij}\)</span>
+  <div class="math">$$w_{ij} = w_{ij} + \epsilon \delta_i x_{ij}$$</div>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="note-on-thresholding">Note on thresholding<a class="headerlink" href="#note-on-thresholding" title="Permanent link">&para;</a></h2>
+<p>The values of each layer need to be thresholded. To do so, we add a "virtual neuron", called <em>bias</em> in each layer, with a fixed value of 1. By updating the associated weights as well, this neuron can be used as an automatic threshold.</p>
+<p><img alt="Bias" src="http://arntanguy.no-ip.org/images/programmation/neural/perceptron_bias.jpg" /></p>
+<h1 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h1>
+<h2 id="core-structure">Core structure<a class="headerlink" href="#core-structure" title="Permanent link">&para;</a></h2>
+<p>We have to be able to create an arbitrary number of layers, each containing an arbitrary number of neurons.
+Each layer must be connected to the following layer for execution, but also to the previous layer for the training
+phase (backpropagation). Thus, the perceptron data structure will be implemented as a double-linked list of layers.</p>
+<p>Thus, we create two main classes:</p>
+<ul>
+<li>PerceptronLayer : represents a layer of the network. Each layer is composed of:<ul>
+<li>an array of neuron values.</li>
+<li>an array representing the weights from this neuron to all neurons of the next layer.</li>
+<li>a pointer to the next layer</li>
+<li>a pointer to the previous layer</li>
+</ul>
+</li>
+<li>Perceptron : manages the creation/removal of layers, training, execution of the network. It only needs to 
+store a pointer to the first and last layers.</li>
+</ul>
+<h2 id="opencl">OpenCL<a class="headerlink" href="#opencl" title="Permanent link">&para;</a></h2>
+<p>We are now going to see how this can be implemented using OpenCL. This section depicts a very raw and poorly implemented
+version of the algorithm. It is only meant to be kept simple so that it provides a clear basis onto which further optimisations can be thought of.</p>
+<p>First, let's start with the execution part of the network.</p>
+<h3 id="execution">Execution<a class="headerlink" href="#execution" title="Permanent link">&para;</a></h3>
+<p>The execution is really straightforward. It is just a matter of computing the new value of each neuron based on the weighted sum of all neurons from the previous layer. Thus, the kernel will take as input the weights and values for each input neuron (neurons from the previous layer), and will have as output an array containing the new values of the neurons in the current layer.
+The kernel is thus ran in order on the 2nd, 3rd.... Nth layer.</p>
+<p>The following kernel can be used to compute the new value for each neuron. Note that it is far from optimal as local memory isn't used at all for the weighted sum!</p>
+<div class="highlight"><pre>    <span class="cm">/**</span>
+<span class="cm">    * @brief Computes one layer of the perceptron given the previous one and the</span>
+<span class="cm">    * weights</span>
+<span class="cm">    * The kernel is run once for each layer.</span>
+<span class="cm">    * The work items are each tasked with computing the output of a single neuron</span>
+<span class="cm">    * of the out layer.</span>
+<span class="cm">    *</span>
+<span class="cm">    * @param out_layer_size</span>
+<span class="cm">    *   Size of the output layer (number of elements in the output array that will</span>
+<span class="cm">    *   contain the result for each neuron).</span>
+<span class="cm">    * @param in_layer_size</span>
+<span class="cm">    *   Number of elements of the input layer</span>
+<span class="cm">    * @param in_value</span>
+<span class="cm">    *   Values of the neuron in the previous layer</span>
+<span class="cm">    * @param in_weights</span>
+<span class="cm">    *   Array containing the weights for each input neuron. It is organised as a</span>
+<span class="cm">    *   two dimensional matrix, written by concatenating each line in the array</span>
+<span class="cm">    *   [ w11, w12, w13, ...</span>
+<span class="cm">    *     w21, w22, w23, ...</span>
+<span class="cm">    *     ..., ..., ..., ...</span>
+<span class="cm">    *   ]</span>
+<span class="cm">    *   Where wij is the weight linking the neuron i of the input layer to the</span>
+<span class="cm">    *   neuron j of the output layer</span>
+<span class="cm">    *   The last weights of each row represent the weights for the &quot;biais neuron&quot;,</span>
+<span class="cm">    *   whose role is to threshold the values.</span>
+<span class="cm">    *   Thus, this kernel should be run with a NDRange of in_layer_size-1</span>
+<span class="cm">    * @param out_values</span>
+<span class="cm">    *   Computed values for the current layer</span>
+<span class="cm">    */</span>
+    <span class="kt">void</span> <span class="n">kernel</span> <span class="nf">perceptron</span><span class="p">(</span>
+            <span class="k">const</span> <span class="kt">int</span> <span class="n">in_layer_size</span><span class="p">,</span>
+            <span class="k">const</span> <span class="kt">int</span> <span class="n">out_layer_size</span><span class="p">,</span>
+            <span class="n">global</span> <span class="k">const</span> <span class="kt">float</span> <span class="o">*</span><span class="n">in_value</span><span class="p">,</span>
+            <span class="n">global</span> <span class="k">const</span> <span class="kt">float</span><span class="o">*</span> <span class="n">in_weights</span><span class="p">,</span>
+          <span class="n">global</span> <span class="kt">float</span><span class="o">*</span> <span class="n">out_values</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">private</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">global_id</span> <span class="o">=</span> <span class="n">get_global_id</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+        <span class="n">private</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">out_layer_s</span> <span class="o">=</span> <span class="n">out_layer_size</span><span class="p">;</span>
+        <span class="n">private</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">in_layer_s</span> <span class="o">=</span> <span class="n">in_layer_size</span><span class="p">;</span>
+
+        <span class="n">private</span> <span class="kt">float</span> <span class="n">sum</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">;</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">in_layer_s</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">sum</span> <span class="o">+=</span> <span class="n">in_weights</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="n">in_layer_s</span><span class="o">*</span><span class="n">global_id</span><span class="p">]</span> <span class="o">*</span> <span class="n">in_value</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+        <span class="p">}</span>
+        <span class="n">out_values</span><span class="p">[</span><span class="n">global_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">sum</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<h3 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h3>
+<p>First, we initialize the weights in range <span class="math">\([-0.5; 0.5]\)</span>. This is done on the host side, 
+as random algorithm can be quite tricky to implement efficiently on GPU.</p>
+<p>All the rest is done in OpenCL. There is a kernel for each step of the algorithm described above.
+It should be fairly easy to understand by reading the code and comments.</p>
+<ul>
+<li><strong>perceptron_train_output_layer</strong> : forward propagation that computes delta for the output layer</li>
+<li><strong>perceptron_train_backpropagate</strong> : backpropagation that computes delta for every single layer</li>
+<li><strong>perceptron_train_update_weights</strong> : update the weight based on the previously computed delta-values.</li>
+<li>
+<p><strong>perceptron_train_update_weights_intertia</strong> : another version of the algorithm, updating the weights faster when far from convergence, and getting slower and slower as the convergence zone approaches. This requires however to keep track of the weights from the two previous iterations.</p>
+<p 1._1.="1./(1." _="+" exp_-x_="exp(-x));
+" return="return">::opencl
+    float sigmoid(float x)</p>
+<div class="highlight"><pre><span class="cm">/**</span>
+<span class="cm"> * @brief Computes delta for all of the output neurons.</span>
+<span class="cm"> * </span>
+<span class="cm"> * @param values</span>
+<span class="cm"> *      Values of the output layer</span>
+<span class="cm"> * @param expected_values</span>
+<span class="cm"> *      Values expected as output of the perceptron</span>
+<span class="cm"> * @param delta</span>
+<span class="cm"> *      Output of the function: computes the delta needed for the training algorithm</span>
+<span class="cm"> **/</span>
+<span class="k">void</span> <span class="n">kernel</span> <span class="n">perceptron_train_output_layer</span><span class="p">(</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span><span class="o">*</span> <span class="n">values</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span><span class="o">*</span> <span class="n">expected_values</span><span class="p">,</span>
+        <span class="k">global</span> <span class="n">float</span><span class="o">*</span> <span class="n">delta</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">ci</span> <span class="o">=</span> <span class="n">expected_values</span><span class="p">[</span><span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">)];</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">oi</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">)];</span>
+    <span class="c1">// Equivalent to sigmoid&#39;(yi) * (ci-oi)</span>
+    <span class="n">delta</span><span class="p">[</span><span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">)]</span> <span class="o">=</span> <span class="n">oi</span> <span class="o">*</span> <span class="p">(</span><span class="mh">1</span><span class="o">-</span><span class="n">oi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">ci</span><span class="o">-</span><span class="n">oi</span><span class="p">);</span> 
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * @brief Computes delta for all layers (but the last one) </span>
+<span class="cm"> * </span>
+<span class="cm"> * @param curr_size</span>
+<span class="cm"> *      Size of current layer</span>
+<span class="cm"> * @param succ_layer_size</span>
+<span class="cm"> *      Size of the output layer of current layer </span>
+<span class="cm"> * @param current_layer_values </span>
+<span class="cm"> *      Values of current layer (calculated during forward propagation)</span>
+<span class="cm"> * @param weights</span>
+<span class="cm"> * @param succ_layer_delta_i</span>
+<span class="cm"> *      Values of delta for the next layer </span>
+<span class="cm"> **/</span>
+<span class="k">void</span> <span class="n">kernel</span> <span class="n">perceptron_train_backpropagate</span><span class="p">(</span>
+        <span class="k">const</span> <span class="k">int</span> <span class="n">curr_size</span><span class="p">,</span>
+        <span class="k">const</span> <span class="k">int</span> <span class="n">succ_layer_size</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span><span class="o">*</span> <span class="n">current_layer_values</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span><span class="o">*</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span><span class="o">*</span> <span class="n">succ_layer_delta_i</span><span class="p">,</span>
+        <span class="c1">// output</span>
+        <span class="k">global</span> <span class="n">float</span><span class="o">*</span> <span class="n">current_delta_out</span>
+        <span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">);</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">oi</span> <span class="o">=</span> <span class="n">current_layer_values</span><span class="p">[</span><span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">)];</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">succ_size</span> <span class="o">=</span> <span class="n">succ_layer_size</span><span class="p">;</span>
+
+    <span class="n">private</span> <span class="n">float</span> <span class="n">sum</span> <span class="o">=</span> <span class="mf">0.f</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="k">int</span> <span class="n">k</span><span class="o">=</span><span class="mh">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">succ_size</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">sum</span> <span class="o">+=</span> <span class="n">succ_layer_delta_i</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">curr_size</span> <span class="o">*</span> <span class="n">k</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="n">current_delta_out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">oi</span><span class="o">*</span><span class="p">(</span><span class="mh">1</span><span class="o">-</span><span class="n">oi</span><span class="p">)</span> <span class="o">*</span> <span class="n">sum</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * @brief Update the weights according to values of delta computed during backpropagation</span>
+<span class="cm"> * </span>
+<span class="cm"> * @param out_layer_size</span>
+<span class="cm"> * @param epsilon_value</span>
+<span class="cm"> *      Parameter controlling the rate of convergence.</span>
+<span class="cm"> *      epsilon too low will lead to a very slow convergence,</span>
+<span class="cm"> *      epsilon too high will prevent convergence</span>
+<span class="cm"> * @param pred_values</span>
+<span class="cm"> * @param delta</span>
+<span class="cm"> * @param weights</span>
+<span class="cm"> **/</span>
+<span class="k">void</span> <span class="n">kernel</span> <span class="n">perceptron_train_update_weights</span><span class="p">(</span>
+        <span class="k">const</span> <span class="k">int</span> <span class="n">out_layer_size</span><span class="p">,</span>
+        <span class="k">const</span> <span class="n">float</span> <span class="n">epsilon_value</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span> <span class="o">*</span><span class="n">pred_values</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span> <span class="o">*</span><span class="n">delta</span><span class="p">,</span>
+        <span class="k">global</span> <span class="n">float</span><span class="o">*</span> <span class="n">weights</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">global_id</span> <span class="o">=</span> <span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">);</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">out_layer_s</span> <span class="o">=</span> <span class="n">out_layer_size</span><span class="p">;</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">val</span> <span class="o">=</span> <span class="n">pred_values</span><span class="p">[</span><span class="n">global_id</span> <span class="o">%</span> <span class="n">out_layer_s</span><span class="p">];</span>
+
+    <span class="c1">// XXX to change</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon_value</span><span class="p">;</span>
+    <span class="c1">// For each weight</span>
+    <span class="n">weights</span><span class="p">[</span><span class="n">global_id</span><span class="p">]</span> <span class="o">+=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">delta</span><span class="p">[</span><span class="n">global_id</span> <span class="o">/</span><span class="n">out_layer_s</span><span class="p">]</span> <span class="o">*</span> <span class="n">val</span><span class="p">;</span> 
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * @brief Update the weights according to values of delta computed during backpropagation</span>
+<span class="cm"> * Uses the weights computed in the two previous training steps to accelerate convergence.</span>
+<span class="cm"> * </span>
+<span class="cm"> * @param out_layer_size</span>
+<span class="cm"> * @param epsilon_value</span>
+<span class="cm"> *      Parameter controlling the rate of convergence.</span>
+<span class="cm"> *      epsilon too low will lead to a very slow convergence,</span>
+<span class="cm"> *      epsilon too high will prevent convergence</span>
+<span class="cm"> * @param beta_value</span>
+<span class="cm"> *      Parameter controlling the non-linear convergence rate</span>
+<span class="cm"> * @param pred_values</span>
+<span class="cm"> * @param delta</span>
+<span class="cm"> * @param previous_weights2</span>
+<span class="cm"> *        Weights at the k-2 iteration</span>
+<span class="cm"> * @param weights</span>
+<span class="cm"> *        As input, weights at the k-1 iteration.</span>
+<span class="cm"> *        As output, new weight at the k iteration</span>
+<span class="cm"> **/</span>
+<span class="k">void</span> <span class="n">kernel</span> <span class="n">perceptron_train_update_weights_inertia</span><span class="p">(</span>
+        <span class="k">const</span> <span class="k">int</span> <span class="n">out_layer_size</span><span class="p">,</span>
+        <span class="k">const</span> <span class="n">float</span> <span class="n">epsilon_value</span><span class="p">,</span>
+        <span class="k">const</span> <span class="n">float</span> <span class="n">beta_value</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span> <span class="o">*</span><span class="n">pred_values</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span> <span class="o">*</span><span class="n">delta</span><span class="p">,</span>
+        <span class="k">global</span> <span class="k">const</span> <span class="n">float</span> <span class="o">*</span><span class="n">previous_weights2</span><span class="p">,</span>
+        <span class="k">global</span> <span class="n">float</span><span class="o">*</span> <span class="n">weights</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">global_id</span> <span class="o">=</span> <span class="n">get_global_id</span><span class="p">(</span><span class="mh">0</span><span class="p">);</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="k">int</span> <span class="n">out_layer_s</span> <span class="o">=</span> <span class="n">out_layer_size</span><span class="p">;</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">val</span> <span class="o">=</span> <span class="n">pred_values</span><span class="p">[</span><span class="n">global_id</span> <span class="o">%</span> <span class="n">out_layer_s</span><span class="p">];</span>
+    <span class="c1">// wij(k-1)</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">w1</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">global_id</span><span class="p">];</span>
+    <span class="c1">// wij(k-2)</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">previous_weights2</span><span class="p">[</span><span class="n">global_id</span><span class="p">];</span>
+
+    <span class="c1">// XXX to change</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon_value</span><span class="p">;</span>
+    <span class="n">private</span> <span class="k">const</span> <span class="n">float</span> <span class="n">beta</span> <span class="o">=</span> <span class="n">beta_value</span><span class="p">;</span>
+    <span class="c1">//printf(&quot;w1-w2: %f\n&quot;, w1-w2);</span>
+    <span class="c1">// For each weight</span>
+    <span class="n">weights</span><span class="p">[</span><span class="n">global_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">w1</span> <span class="o">+</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">delta</span><span class="p">[</span><span class="n">global_id</span> <span class="o">/</span><span class="n">out_layer_s</span><span class="p">]</span> <span class="o">*</span> <span class="n">val</span>
+                        <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span>  <span class="p">(</span><span class="n">w1</span><span class="o">-</span><span class="n">w2</span><span class="p">);</span> 
+<span class="p">}</span>
+</pre></div>
+
+
+</li>
+</ul>
+<h1 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h1>
+<p>This article showed how to easily create a perceptron neural network using OpenCL. 
+This is one of my first OpenCL projects, and  I'm perfectly aware that this is far from being an optimal 
+code. This article was partly meant as a reminder for myself of how I implemented the perceptron, so that I can
+later on come back to it and improve upon it. The main thing remaining to do would be to make proper use of local memory,
+in order to considerably improve the efficiency of the weighted sums computations. I will describe this in another article later on.</p>
+<p>The full code is available on my github account <a href="https://github.com/geenux/perceptron">here</a></p>
+<p>I want to thank <a href="http://www.i3s.unice.fr/~fillatre">Lionel Filatre</a>, Professor at the University of Polytech'Nice-Sophia
+for his lectures on neural networks. </p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' && location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-perceptron-opencl"
+                href="http://arntanguy.no-ip.org/multi-layered-perceptron-using-opencl.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-perceptron-opencl';
+    var disqus_url = 'http://arntanguy.no-ip.org/multi-layered-perceptron-using-opencl.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2014-02-28T00:00:00+01:00">Feb 28, 2014</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#neuralnetworks-ref">NeuralNetworks</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#neural-networks-ref">neural networks
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#opencl-ref">opencl
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#perceptron-ref">perceptron
+                    <span>1</span>
+</a></li>
+                <li><a href="http://arntanguy.no-ip.org/tags.html#programmation-ref">programmation
+                    <span>10</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>

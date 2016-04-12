@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Arnaud TANGUY" />
+        <meta name="copyright" content="Arnaud TANGUY" />
+
+<meta name="keywords" content="VIM, Programmation, " />
+        <title>VIM : My configuration  · VIM Proves The World
+</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46439484-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+    </head>
+    <body>
+        <div id="content-sans-footer">
+        <div class="navbar navbar-static-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="http://arntanguy.no-ip.org/"><span class=site-name>VIM Proves The World</span></a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav pull-right top-menu">
+                            <li ><a href="http://arntanguy.no-ip.org">Home</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/pages/links.html">Links</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/categories.html">Categories</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/tags.html">Tags</a></li>
+                            <li ><a href="http://arntanguy.no-ip.org/archives.html">Archives</a></li>
+                            <li><form class="navbar-search" action="http://arntanguy.no-ip.org/search.html" onsubmit="return validateForm(this.elements['q'].value);"> <input type="text" class="search-query" placeholder="Search" name="q" id="tipue_search_input"></form></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span1"></div>
+                <div class="span10">
+<article>
+<div class="row-fluid">
+    <header class="page-header span10 offset2">
+    <h1><a href="http://arntanguy.no-ip.org/vim-my-configuration.html"> VIM : My configuration  </a></h1>
+    </header>
+</div>
+
+<div class="row-fluid">
+        <div class="span8 offset2 article-content">
+
+            <p>Tant qu’à m’être fait un vim qui me convient à peu près, je me suis dit que ça
+pourrait être bien de partager ça. J’utilise un gestionnaire de version (git)
+pour suivre l’évolution de ma configuration, le dépôt contenant le tout est
+disponible sur <a href="http://github.com/geenux/vim_config/">github</a>.</p>
+<p>Actuellement ma configuration permet :</p>
+<ul>
+<li>
+<p>De programmer en c++ : Alternate (:A) pour passer des .cpp aux .h, Surround pour gérer les parenthèses, matchit pour étendre la commande "%" (permettant de passer de la parenthèse ouvrante à la fermante) à plus d’éléments (balises xml…), NerdCommenter pour gérer les commentaires, DoxygenToolKit pour gérer la documentation. Et le plugin le plus important : OmniCppComplete qui permet de compléter le code plus intelligemment que Ctrl+N (notemment en utilisant les fichiers tags, que j’ai réalisé pour Qt et boost sur mon ordi).</p>
+</li>
+<li>
+<p>De faire de latex : la latex-suite est installée.</p>
+</li>
+<li>
+<p>Il y a d’autres plugins intéressant, comme Arpeggio par exemple. Arpeggio permet d’utiliser des raccourcis en pressant simultanément plusieurs touches.
+Par exemple, en ajoutant la ligne suivante dans le .vimrc
+call arpeggio#map('i', '', 0, 'jk', '')
+Ça créé un raccourcis en mode insertion, de sorte que "jk" pressés simultanément sortent du mode insertion, et que "j" et "k" pressés séparément aient toujours le même effet.</p>
+</li>
+</ul>
+<p>Si vous décidez d’utiliser ma configuration, téléchargez là à l’adresse indiquée plus haut, puis placez le contenu du dossier dans ~/.vim. Ensuite, déplacez le vimrc dans ~/.vimrc et gvimrc dans ~/.gvimrc.</p>
+<p>J’ai rédigé un mini aide mémoire pour moi, faites dans vim </p>
+<div class="highlight"><pre>    :<span class="k">h</span> arnaud
+</pre></div>
+
+
+<p>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <em>arnaud.txt</em>    Arnaud Vim Config          2009-06-21</p>
+<div class="highlight"><pre><span class="nl">Author:</span>  <span class="n">TANGUY</span> <span class="n">Arnaud</span> <span class="o">&lt;</span><span class="n">arn</span><span class="p">.</span><span class="n">tanguy</span><span class="err">@</span><span class="n">gmail</span><span class="p">.</span><span class="n">com</span><span class="o">&gt;</span>
+<span class="nl">Copyright:</span> <span class="err">©</span> <span class="n">Copyright</span> <span class="mi">2009</span> <span class="n">TANGUY</span> <span class="n">Arnaud</span><span class="p">.</span> <span class="n">All</span> <span class="n">Rights</span> <span class="n">Reserved</span><span class="p">.</span> <span class="n">Licence</span> <span class="n">GNU</span>
+<span class="n">GPL</span> <span class="n">v2</span> <span class="n">or</span> <span class="n">later</span> <span class="p">(</span><span class="n">at</span> <span class="n">your</span> <span class="n">option</span><span class="p">)</span>
+
+<span class="o">==============================================================================</span>
+<span class="mf">1.</span> <span class="n">Contents</span>         <span class="o">*</span><span class="n">arnaud</span><span class="o">*</span> <span class="o">*</span><span class="n">arnaud</span><span class="o">-</span><span class="n">contents</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">1</span>
+
+    <span class="mf">1.</span> <span class="n">Contents</span><span class="p">.................................</span><span class="o">:</span> <span class="o">|</span><span class="n">arnaud</span><span class="o">-</span><span class="n">contents</span><span class="o">|</span>
+    <span class="mf">2.</span> <span class="n">Key</span><span class="o">-</span><span class="n">mappings</span><span class="p">.............................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">keys</span><span class="o">|</span>
+    <span class="mf">3.</span> <span class="n">Plugins</span><span class="p">..................................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">plugins</span><span class="o">|</span>
+         <span class="n">OmniCppComplete</span><span class="p">........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">omnicppcomplete</span><span class="o">|</span>
+         <span class="n">Project</span><span class="p">................................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">project</span><span class="o">|</span>
+         <span class="n">SearchInRuntime</span><span class="p">........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">searchinruntime</span><span class="o">|</span>
+         <span class="n">Surround</span><span class="p">...............................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">surround</span><span class="o">|</span>
+         <span class="n">Alternate</span><span class="p">..............................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">alternate</span><span class="o">|</span>
+         <span class="n">ManPageView</span><span class="p">............................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">manpageview</span><span class="o">|</span>
+         <span class="n">Matchit</span><span class="p">................................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">matchit</span><span class="o">|</span>
+         <span class="n">NERD_Commenter</span><span class="p">.........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">nerdcommenter</span><span class="o">|</span>
+         <span class="n">PhpDocumentor</span><span class="p">..........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">phpdocumentor</span><span class="o">|</span>
+         <span class="n">DoxygenToolkit</span><span class="p">.........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">doxygen</span><span class="o">|</span>
+         <span class="n">Markdown</span><span class="p">...............................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">markdown</span><span class="o">|</span>
+         <span class="n">Indent</span> <span class="n">Guides</span><span class="p">..........................</span><span class="o">:</span> <span class="o">|</span><span class="n">a</span><span class="o">-</span><span class="n">indent</span><span class="o">-</span><span class="n">guides</span><span class="o">|</span>
+
+<span class="o">==============================================================================</span>
+<span class="mf">2.</span> <span class="n">Key</span> <span class="n">mappings</span>                         <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">key</span><span class="o">*</span> <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">keys</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">1</span>
+       <span class="p">,</span><span class="n">cd</span>      <span class="n">cd</span> <span class="n">to</span> <span class="n">the</span> <span class="n">directory</span> <span class="n">of</span> <span class="n">the</span> <span class="n">current</span> <span class="n">view</span>
+       <span class="o">&lt;</span><span class="n">F6</span><span class="o">&gt;</span>     <span class="n">SearchInVar</span> <span class="n">and</span> <span class="n">open</span> <span class="k">in</span> <span class="n">the</span> <span class="n">current</span> <span class="n">view</span>
+       <span class="o">&lt;</span><span class="n">F7</span><span class="o">&gt;</span>     <span class="n">SearchInVar</span> <span class="n">and</span> <span class="n">open</span> <span class="k">in</span> <span class="n">a</span> <span class="n">new</span> <span class="n">tab</span>
+       <span class="o">&lt;</span><span class="n">F1</span><span class="o">&gt;</span>     <span class="n">Project</span> <span class="n">open</span> <span class="n">the</span> <span class="n">project</span> <span class="n">window</span>
+       <span class="o">&lt;</span><span class="n">F2</span><span class="o">&gt;</span>     <span class="n">Ctags</span> <span class="n">rebuild</span><span class="p">.</span> <span class="n">In</span> <span class="n">insert</span> <span class="n">and</span> <span class="n">normal</span> <span class="n">modes</span>
+       <span class="o">&lt;</span><span class="n">F9</span><span class="o">&gt;</span>     <span class="n">Build</span> <span class="n">the</span> <span class="n">file</span> <span class="n">or</span> <span class="n">project</span><span class="p">.</span> <span class="n">It</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">a</span> <span class="n">ftplugin</span><span class="p">,</span> <span class="n">so</span> <span class="n">it</span> <span class="n">may</span> <span class="n">not</span> <span class="n">be</span>
+                <span class="n">mapped</span> <span class="k">in</span> <span class="n">every</span> <span class="n">mode</span>
+       <span class="o">&lt;</span><span class="n">C</span><span class="o">-</span><span class="n">D</span><span class="o">&gt;</span>    <span class="n">Generate</span> <span class="n">doc</span> <span class="k">for</span> <span class="n">a</span> <span class="n">function</span> <span class="p">(</span><span class="n">or</span> <span class="n">class</span><span class="p">).</span> <span class="n">It</span> <span class="n">is</span> <span class="n">used</span> <span class="n">by</span>
+               <span class="n">ftplugins</span><span class="p">,</span> <span class="n">at</span> <span class="n">least</span> <span class="n">the</span> <span class="n">php</span> <span class="n">one</span><span class="p">.</span>
+
+<span class="mf">3.</span> <span class="n">Plugins</span>                  <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">plugins</span><span class="o">*</span> <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">plugin</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">1</span>
+
+    <span class="n">OMNICPPCOMPLETE</span>                             <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">omnicppcomplete</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">Omnicppcomplete</span> <span class="n">is</span> <span class="n">a</span> <span class="n">completition</span> <span class="n">plugin</span><span class="p">.</span> <span class="n">It</span> <span class="n">completes</span> <span class="n">the</span> <span class="n">code</span><span class="p">,</span> <span class="n">maily</span>
+    <span class="n">the</span> <span class="n">c</span><span class="o">++</span> <span class="n">ones</span><span class="p">.</span>
+    <span class="n">It</span> <span class="n">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">ctags</span><span class="p">,</span> <span class="n">so</span> <span class="n">it</span> <span class="n">requires</span> <span class="n">a</span> <span class="n">tags</span> <span class="n">file</span><span class="p">,</span> <span class="n">which</span> <span class="n">can</span> <span class="n">be</span> <span class="n">created</span>
+    <span class="nl">with:</span>
+    <span class="n">ctags</span> <span class="o">-</span><span class="n">R</span> <span class="o">--</span><span class="n">c</span><span class="o">++-</span><span class="n">kinds</span><span class="o">=+</span><span class="n">p</span> <span class="o">--</span><span class="n">fields</span><span class="o">=+</span><span class="n">iaS</span> <span class="o">--</span><span class="n">extra</span><span class="o">=+</span><span class="n">q</span> <span class="p">.</span>
+    <span class="n">Then</span><span class="p">,</span> <span class="n">the</span> <span class="n">autocompletition</span> <span class="n">is</span> <span class="n">with</span> <span class="o">&lt;</span><span class="n">C</span><span class="o">-</span><span class="n">x</span><span class="o">&gt;&lt;</span><span class="n">C</span><span class="o">-</span><span class="n">o</span><span class="o">&gt;</span> <span class="p">(</span><span class="n">automatically</span> <span class="n">called</span> <span class="k">in</span>
+    <span class="n">my</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">See</span> <span class="o">|</span><span class="n">omnicppcomplete</span><span class="p">.</span><span class="n">txt</span><span class="o">|</span>
+
+    <span class="n">PROJECT</span>                                   <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">project</span><span class="o">*</span> <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">projects</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">A</span> <span class="n">project</span> <span class="n">managment</span> <span class="n">plugin</span><span class="p">.</span> <span class="n">It</span> <span class="n">allows</span> <span class="n">to</span> <span class="n">remember</span> <span class="n">the</span> <span class="n">project</span>
+    <span class="n">structures</span><span class="p">,</span> <span class="n">and</span> <span class="n">re</span><span class="o">-</span><span class="n">open</span> <span class="n">it</span> <span class="n">easily</span><span class="p">.</span>
+    <span class="o">-</span> <span class="err">\</span><span class="n">c</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">new</span> <span class="n">project</span>
+    <span class="o">-</span> <span class="o">:</span><span class="n">w</span> <span class="n">saves</span> <span class="n">it</span>
+    <span class="o">-</span> <span class="n">SPACE</span> <span class="n">grow</span><span class="o">/</span><span class="n">reduce</span> <span class="n">the</span> <span class="n">project</span> <span class="n">window</span>
+    <span class="n">See</span> <span class="o">|</span><span class="n">project</span><span class="p">.</span><span class="n">cpp</span><span class="o">|</span>
+
+    <span class="n">SEARCHINRUNTIME</span>                     <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">searchinruntime</span><span class="o">*</span> <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">SIR</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">Search</span> <span class="n">a</span> <span class="n">file</span> <span class="n">name</span> <span class="n">or</span> <span class="n">a</span> <span class="n">variable</span> <span class="k">in</span> <span class="n">the</span> <span class="n">PATH</span><span class="p">.</span> <span class="n">It</span> <span class="n">provides</span> <span class="n">an</span> <span class="n">easy</span> <span class="n">way</span>
+    <span class="n">to</span> <span class="n">load</span> <span class="n">files</span><span class="p">.</span>
+    <span class="n">See</span> <span class="o">|</span><span class="n">searchInRuntime</span><span class="p">.</span><span class="n">txt</span><span class="o">|</span>
+
+    <span class="n">SURROUND</span>                             <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">surround</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">It</span> <span class="n">is</span> <span class="n">a</span> <span class="n">plugin</span> <span class="n">to</span> <span class="n">surround</span> <span class="n">text</span> <span class="n">with</span> <span class="n">caracters</span> <span class="n">like</span> <span class="p">{,(,</span> <span class="s">&quot;...</span>
+    <span class="o">-</span> <span class="n">cs</span><span class="p">({</span>  <span class="o">:</span> <span class="n">replace</span> <span class="p">(...)</span> <span class="n">with</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+    <span class="n">cs</span><span class="p">(}</span>  <span class="o">:</span> <span class="n">replace</span> <span class="p">(...)</span> <span class="n">with</span> <span class="p">{...}</span> <span class="p">(</span><span class="n">without</span> <span class="n">spaces</span><span class="p">)</span>
+    <span class="n">cs</span><span class="p">{</span><span class="o">&lt;</span><span class="n">q</span><span class="o">&gt;</span> <span class="o">:</span> <span class="n">replace</span> <span class="p">{...}</span> <span class="n">with</span> <span class="o">&lt;</span><span class="n">q</span><span class="o">&gt;</span><span class="p">...</span><span class="o">&lt;/</span><span class="n">q</span><span class="o">&gt;</span>
+    <span class="o">-</span> <span class="n">ds</span><span class="p">{</span> <span class="o">:</span> <span class="n">delete</span> <span class="p">{}</span>
+    <span class="o">-</span> <span class="n">ys</span><span class="p">[</span><span class="n">text</span> <span class="n">element</span><span class="p">]{</span> <span class="o">:</span> <span class="n">surround</span> <span class="n">text</span> <span class="n">element</span> <span class="n">with</span> <span class="p">{}</span>
+    <span class="n">Example</span> <span class="o">:</span> <span class="s">&quot;_Hello dear friends&quot;</span>
+    <span class="n">ys2w</span><span class="p">[</span> <span class="n">will</span> <span class="n">give</span> <span class="n">you</span> <span class="s">&quot;[ Hello dear ] friends&quot;</span>
+    <span class="o">-</span> <span class="n">Visual</span> <span class="n">selection</span> <span class="n">surrounding</span><span class="o">:</span>
+    <span class="n">press</span> <span class="n">V</span> <span class="n">or</span> <span class="n">v</span><span class="p">,</span> <span class="n">and</span> <span class="n">then</span> <span class="n">select</span> <span class="n">text</span><span class="p">.</span> <span class="n">Press</span> <span class="n">S</span> <span class="n">and</span> <span class="n">type</span> <span class="n">your</span>
+    <span class="n">surrounding</span> <span class="n">character</span> <span class="p">(</span><span class="n">it</span> <span class="n">can</span> <span class="n">be</span> <span class="n">html</span> <span class="n">tags</span><span class="p">).</span>
+    <span class="n">See</span> <span class="o">|</span><span class="n">surround</span><span class="p">.</span><span class="n">txt</span><span class="o">|</span>
+
+    <span class="n">ALTERNATE</span>                               <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">alternate</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">Switch</span> <span class="n">between</span> <span class="p">.</span><span class="n">h</span> <span class="n">and</span> <span class="p">.</span><span class="n">cpp</span> <span class="p">(.</span><span class="n">hpp</span><span class="o">/</span><span class="p">.</span><span class="n">cpp</span> <span class="p">.</span><span class="n">h</span><span class="o">/</span><span class="p">.</span><span class="n">c</span> <span class="n">and</span> <span class="n">so</span> <span class="n">on</span><span class="p">).</span>
+
+    <span class="n">MANPAGEVIEW</span>                             <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">manpageview</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">View</span> <span class="n">php</span> <span class="n">man</span> <span class="n">pages</span><span class="p">.</span> <span class="n">It</span> <span class="n">requires</span> <span class="n">links</span> <span class="n">to</span> <span class="n">work</span><span class="p">.</span>
+    <span class="n">Call</span> <span class="n">it</span> <span class="n">with</span> <span class="n">K</span> <span class="n">as</span> <span class="k">for</span> <span class="n">unixes</span> <span class="n">man</span> <span class="n">pages</span>
+
+    <span class="n">MATCHIT</span>                                 <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">matchit</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">It</span> <span class="n">allows</span> <span class="n">you</span> <span class="n">to</span> <span class="n">configure</span> <span class="o">%</span> <span class="n">to</span> <span class="n">match</span> <span class="n">more</span> <span class="n">than</span> <span class="n">just</span>
+    <span class="n">single</span> <span class="n">characters</span><span class="p">.</span>  <span class="n">You</span> <span class="n">can</span> <span class="n">match</span> <span class="n">words</span> <span class="n">and</span> <span class="n">even</span> <span class="n">regular</span>
+    <span class="n">expressions</span><span class="p">.</span>
+    <span class="n">Also</span><span class="p">,</span> <span class="n">matching</span> <span class="n">treats</span> <span class="n">strings</span> <span class="n">and</span> <span class="n">comments</span> <span class="p">(</span><span class="n">as</span> <span class="n">recognized</span> <span class="n">by</span> <span class="n">the</span>
+    <span class="n">syntax</span> <span class="n">highlighting</span> <span class="n">mechanism</span><span class="p">)</span> <span class="n">intelligently</span><span class="p">.</span>
+    <span class="n">The</span> <span class="k">default</span> <span class="n">ftplugins</span> <span class="n">include</span> <span class="n">settings</span> <span class="k">for</span> <span class="n">several</span> <span class="n">languages</span><span class="o">:</span>
+    <span class="n">Ada</span><span class="p">,</span> <span class="n">ASP</span> <span class="n">with</span> <span class="n">VBS</span><span class="p">,</span> <span class="n">Csh</span><span class="p">,</span> <span class="n">DTD</span><span class="p">,</span> <span class="n">Essbase</span><span class="p">,</span> <span class="n">Fortran</span><span class="p">,</span> <span class="n">HTML</span><span class="p">,</span> <span class="n">JSP</span>
+    <span class="p">(</span><span class="n">same</span> <span class="n">as</span> <span class="n">HTML</span><span class="p">),</span> <span class="n">LaTeX</span><span class="p">,</span> <span class="n">Lua</span><span class="p">,</span> <span class="n">Pascal</span><span class="p">,</span> <span class="n">SGML</span><span class="p">,</span> <span class="n">Shell</span><span class="p">,</span> <span class="n">Tcsh</span><span class="p">,</span> <span class="n">Vim</span><span class="p">,</span> <span class="n">XML</span><span class="p">.</span>
+    <span class="p">(</span><span class="n">I</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">keep</span> <span class="n">track</span><span class="p">,</span> <span class="n">so</span> <span class="n">there</span> <span class="n">may</span> <span class="n">be</span> <span class="n">others</span><span class="p">.)</span>
+    <span class="n">The</span> <span class="n">documentation</span> <span class="p">(</span><span class="n">included</span> <span class="k">in</span> <span class="n">the</span> <span class="n">zip</span> <span class="n">file</span><span class="p">)</span> <span class="n">explains</span> <span class="n">how</span> <span class="n">to</span> <span class="n">configure</span>
+    <span class="n">the</span> <span class="n">script</span> <span class="k">for</span> <span class="n">a</span> <span class="n">new</span> <span class="n">language</span> <span class="n">and</span> <span class="n">how</span> <span class="n">to</span> <span class="n">modify</span> <span class="n">the</span> <span class="n">defaults</span><span class="p">.</span>
+    <span class="n">See</span> <span class="o">|</span><span class="n">matchit</span><span class="p">.</span><span class="n">txt</span><span class="o">|</span>
+
+    <span class="n">NERDCOMMENTER</span>                      <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">nerd</span><span class="o">*</span>  <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">nerdcommenter</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">Nerd</span> <span class="n">commenter</span> <span class="n">allow</span> <span class="n">to</span> <span class="n">comment</span> <span class="n">code</span> <span class="n">according</span> <span class="n">to</span> <span class="n">the</span> <span class="n">file</span> <span class="n">type</span><span class="p">.</span>
+    <span class="n">The</span> <span class="n">most</span> <span class="n">useful</span> <span class="n">mappings</span> <span class="n">are</span><span class="o">:</span>
+
+    <span class="p">,</span><span class="n">cc</span> <span class="o">|</span><span class="n">NERDComComment</span><span class="o">|</span>
+    <span class="n">Comments</span> <span class="n">out</span> <span class="n">the</span> <span class="n">current</span> <span class="n">line</span> <span class="n">or</span> <span class="n">text</span> <span class="n">selected</span> <span class="k">in</span> <span class="n">visual</span> <span class="n">mode</span><span class="p">.</span>
+    <span class="p">,</span><span class="n">cy</span> <span class="n">is</span> <span class="n">the</span> <span class="n">same</span><span class="p">,</span> <span class="n">but</span> <span class="n">yank</span> <span class="n">before</span> <span class="n">commenting</span>
+
+    <span class="p">,</span><span class="n">cl</span> <span class="n">OR</span> <span class="p">,</span><span class="n">cr</span> <span class="n">OR</span> <span class="p">,</span><span class="n">cb</span> <span class="o">|</span><span class="n">NERDComAlignedComment</span><span class="o">|</span>
+    <span class="n">Same</span> <span class="n">as</span> <span class="o">|</span><span class="n">NERDComComment</span><span class="o">|</span> <span class="n">except</span> <span class="n">that</span> <span class="n">the</span> <span class="n">delimiters</span> <span class="n">are</span> <span class="n">aligned</span> <span class="n">down</span> <span class="n">the</span>
+    <span class="n">left</span> <span class="n">side</span> <span class="p">(,</span><span class="n">cl</span><span class="p">),</span> <span class="n">the</span> <span class="n">right</span> <span class="n">side</span> <span class="p">(,</span><span class="n">cr</span><span class="p">)</span> <span class="n">or</span> <span class="n">both</span> <span class="n">sides</span>
+    <span class="p">(,</span><span class="n">cb</span><span class="p">).</span>
+
+    <span class="p">,</span><span class="n">cI</span> <span class="o">|</span><span class="n">NERDComPrependComment</span><span class="o">|</span> <span class="p">,</span><span class="n">cA</span> <span class="o">|</span><span class="n">NERDComAppendComment</span><span class="o">|</span>
+    <span class="n">Comment</span> <span class="n">before</span><span class="o">/</span><span class="n">after</span> <span class="n">the</span> <span class="n">current</span> <span class="n">line</span><span class="p">.</span> <span class="n">Adds</span> <span class="n">comment</span> <span class="n">delimiters</span> <span class="n">to</span> <span class="n">the</span> <span class="n">end</span> <span class="n">of</span> <span class="n">line</span> <span class="n">and</span> <span class="n">goes</span>
+    <span class="n">into</span> <span class="n">insert</span> <span class="n">mode</span>  <span class="n">between</span> <span class="n">them</span><span class="p">.</span>
+
+    <span class="p">,</span><span class="n">c</span><span class="o">&lt;</span><span class="n">space</span><span class="o">&gt;</span> <span class="o">|</span><span class="n">NERDComToggleComment</span><span class="o">|</span>
+    <span class="n">Toggles</span> <span class="n">the</span> <span class="n">comment</span> <span class="n">state</span> <span class="n">of</span> <span class="n">the</span> <span class="n">selected</span> <span class="n">line</span><span class="p">(</span><span class="n">s</span><span class="p">).</span> <span class="n">If</span> <span class="n">the</span> <span class="n">topmost</span> <span class="n">selected</span>
+    <span class="n">line</span> <span class="n">is</span> <span class="n">commented</span><span class="p">,</span> <span class="n">all</span> <span class="n">selected</span> <span class="n">lines</span> <span class="n">are</span> <span class="n">uncommented</span> <span class="n">and</span> <span class="n">vice</span> <span class="n">versa</span><span class="p">.</span>
+
+    <span class="p">,</span><span class="n">cu</span> <span class="o">|</span><span class="n">NERDComUncommentLine</span><span class="o">|</span>
+    <span class="n">Uncomments</span> <span class="n">the</span> <span class="n">selected</span> <span class="n">line</span><span class="p">(</span><span class="n">s</span><span class="p">).</span>
+
+    <span class="p">,</span><span class="n">cm</span> <span class="o">|</span><span class="n">NERDComMinimalComment</span><span class="o">|</span>
+    <span class="n">Comments</span> <span class="n">the</span> <span class="n">given</span> <span class="n">lines</span> <span class="n">using</span> <span class="n">only</span> <span class="n">one</span> <span class="n">set</span> <span class="n">of</span> <span class="n">multipart</span> <span class="n">delimiters</span> <span class="k">if</span>
+    <span class="n">possible</span><span class="p">.</span>
+
+    <span class="p">,</span><span class="n">ci</span> <span class="o">|</span><span class="n">NERDComInvertComment</span><span class="o">|</span>
+    <span class="n">Toggles</span> <span class="n">the</span> <span class="n">comment</span> <span class="n">state</span> <span class="n">of</span> <span class="n">the</span> <span class="n">selected</span> <span class="n">line</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="n">individually</span><span class="p">.</span> <span class="n">Each</span>
+    <span class="n">selected</span>
+    <span class="n">line</span> <span class="n">that</span> <span class="n">is</span> <span class="n">commented</span> <span class="n">is</span> <span class="n">uncommented</span> <span class="n">and</span> <span class="n">vice</span> <span class="n">versa</span><span class="p">.</span>
+
+    <span class="p">,</span><span class="n">cs</span> <span class="o">|</span><span class="n">NERDComSexyComment</span><span class="o">|</span>
+    <span class="n">Comments</span> <span class="n">out</span> <span class="n">the</span> <span class="n">selected</span> <span class="n">lines</span> <span class="err">``</span><span class="n">sexily</span><span class="err">&#39;&#39;</span><span class="p">.</span> <span class="n">Useful</span> <span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">headers</span><span class="p">...</span>
+
+    <span class="p">,</span><span class="n">ca</span> <span class="o">|</span><span class="n">NERDComAltDelim</span><span class="o">|</span>
+    <span class="cm">/*Switches to the alternative set of delimiters.*/</span>
+
+    <span class="n">See</span> <span class="o">|</span><span class="n">NERDCommenter</span><span class="o">|</span>
+
+    <span class="n">PHPDOCUMENTOR</span>                                <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">phpdocumentor</span><span class="o">*</span> <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">phpd</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">PhpDocumentor</span> <span class="n">is</span> <span class="n">a</span> <span class="n">plugin</span> <span class="k">for</span> <span class="n">generating</span> <span class="n">phpDocumentor</span> <span class="n">documentation</span>
+    <span class="n">blocs</span><span class="p">.</span>
+    <span class="n">In</span> <span class="n">my</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">it</span> <span class="n">is</span> <span class="n">called</span> <span class="n">with</span> <span class="o">&lt;</span><span class="n">C</span><span class="o">-</span><span class="n">P</span><span class="o">&gt;</span><span class="p">,</span> <span class="k">in</span> <span class="n">every</span> <span class="n">mode</span><span class="p">.</span>
+
+    <span class="n">DOXYGEN</span>                                                 <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">doxygen</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">It</span> <span class="n">is</span> <span class="n">a</span> <span class="n">plugin</span> <span class="k">for</span> <span class="n">autocreatin</span> <span class="n">doxygen</span> <span class="n">commenting</span> <span class="n">blocs</span><span class="p">.</span>
+    <span class="n">Move</span> <span class="n">on</span> <span class="n">a</span> <span class="n">function</span> <span class="n">declaration</span><span class="p">,</span> <span class="n">and</span> <span class="o">:</span><span class="n">Dox</span> <span class="n">or</span> <span class="o">&lt;</span><span class="n">C</span><span class="o">-</span><span class="n">P</span><span class="o">&gt;</span>
+    <span class="n">See</span> <span class="n">http</span><span class="o">:</span><span class="c1">//www.vim.org/scripts/script.php?script_id=987 for more details</span>
+    <span class="n">and</span> <span class="n">configuration</span> <span class="n">variables</span>
+
+    <span class="n">MARKDOWN</span>                                     <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">markdown</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="nl">Mappings:</span>
+    <span class="n">the</span> <span class="n">following</span> <span class="n">work</span> <span class="n">on</span> <span class="n">normal</span> <span class="n">and</span> <span class="n">visual</span> <span class="n">modes</span><span class="o">:</span>
+    <span class="o">-</span> <span class="p">]]</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">next</span> <span class="n">header</span>
+    <span class="o">-</span> <span class="p">[[</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">previous</span> <span class="n">header</span>
+    <span class="o">-</span> <span class="p">][</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">next</span> <span class="n">sibling</span> <span class="n">header</span> <span class="k">if</span> <span class="n">any</span>
+    <span class="o">-</span> <span class="p">[]</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">previous</span> <span class="n">sibling</span> <span class="n">header</span> <span class="k">if</span> <span class="n">any</span>
+    <span class="o">-</span> <span class="p">]</span><span class="n">c</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">Current</span> <span class="n">header</span>
+    <span class="o">-</span> <span class="p">]</span><span class="n">u</span><span class="o">:</span> <span class="n">go</span> <span class="n">to</span> <span class="n">parent</span> <span class="n">header</span> <span class="p">(</span><span class="n">Up</span><span class="p">)</span>
+
+    <span class="n">INDENT</span> <span class="n">GUIDES</span>                               <span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="n">indent</span><span class="o">-</span><span class="n">guides</span><span class="o">*</span> <span class="p">{{{</span><span class="mi">2</span>
+    <span class="n">Activate</span> <span class="n">with</span> <span class="o">&lt;</span><span class="n">Leader</span><span class="o">&gt;</span><span class="n">ig</span>   <span class="p">(,</span><span class="n">ig</span><span class="p">)</span>
+</pre></div>
+
+
+<p>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </p>
+            <section>
+<p id="comment-message">So what do you think? Did I miss something? Is any part
+unclear? Leave your comments below. </p>
+<div class="accordion" id="accordion2">
+    <div class="accordion-group">
+        <div class="accordion-heading">
+            <a class="accordion-toggle disqus-comment-count" data-toggle="collapse" data-parent="#accordion2"
+                    data-disqus-identifier="geenux-vim-configuration"
+                href="http://arntanguy.no-ip.org/vim-my-configuration.html#disqus_thread">
+                Comments
+            </a>
+        </div>
+        <div id="disqus_thread" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <div class="comments">
+                    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'geenux';
+        var disqus_identifier = 'geenux-vim-configuration';
+    var disqus_url = 'http://arntanguy.no-ip.org/vim-my-configuration.html';
+
+    (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+            <hr/>
+        </div>
+        <section>
+        <div class="span2" style="float:right;font-size:0.9em;">
+            <h4>Published</h4>
+            <time pubdate="pubdate" datetime="2009-12-23T00:00:00+01:00">Dec 23, 2009</time>
+            <h4>Category</h4>
+            <a class="category-link" href="http://arntanguy.no-ip.org/categories.html#programmation-ref">Programmation</a>
+            <h4>Tags</h4>
+            <ul class="list-of-tags tags-in-article">
+                <li><a href="http://arntanguy.no-ip.org/tags.html#vim-ref">VIM
+                    <span>2</span>
+</a></li>
+            </ul>
+<h4>Contact</h4>
+<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-linkedin sidebar-social-links"></i></a>
+<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-twitter sidebar-social-links"></i></a>
+<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-github sidebar-social-links"></i></a>
+<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-bitbucket sidebar-social-links"></i></a>
+<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <i class="fa fa-google+ sidebar-social-links"></i></a>
+        </div>
+        </section>
+</div>
+</article>
+                </div>
+                <div class="span1"></div>
+            </div>
+        </div>
+    </div>
+<footer>
+<div id="footer">
+    <ul class="footer-content">
+        <li class="elegant-license"><a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/"><img
+alt="Creative Commons License" style="border-width:0"
+src="http://i.creativecommons.org/l/by-sa/3.0/80x15.png" /></a><br
+/>This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons
+Attribution-ShareAlike 3.0 Unported License</a>.</li>
+        <li class="elegant-power">Powered by <a href="http://getpelican.com/" title="Pelican Home Page">Pelican</a>. Theme: <a href="http://oncrashreboot.com/pelican-elegant" title="Theme Elegant Home Page">Elegant</a> by <a href="http://oncrashreboot.com" title="Talha Mansoor Home Page">Talha Mansoor</a></li>
+    </ul>
+</div>
+</footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function validateForm(query)
+            {
+                return (query.length > 0);
+            }
+        </script>
+
+            <script type="text/javascript">
+var disqus_shortname = 'geenux';
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+<script  language="javascript" type="text/javascript">
+function uncollapse() {
+    if (window.location.hash.match(/^#comment-\d+$/)) {
+        $('#disqus_thread').collapse('show');
+    }
+}
+</script>
+<script type="text/javascript" language="JavaScript">
+uncollapse();
+window.onhashchange=function(){
+    if (window.location.hash.match(/^#comment-\d+$/))
+        window.location.reload(true);
+}
+</script>
+<script>
+$('#disqus_thread').on('shown', function () {
+    var link = document.getElementsByClassName('accordion-toggle');
+    var old_innerHTML = link[0].innerHTML;
+    $(link[0]).fadeOut(500, function() {
+        $(this).text('Click here to hide comments').fadeIn(500);
+    });
+    $('#disqus_thread').on('hidden', function () {
+        $(link[0]).fadeOut(500, function() {
+            $(this).text(old_innerHTML).fadeIn(500);
+        });
+    })
+})
+</script>
+
+
+    </body>
+</html>
