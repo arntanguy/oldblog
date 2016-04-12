@@ -2,33 +2,49 @@
 <html lang="en-US">
     <head>
         <meta charset="utf-8"> 
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="author" content="Arnaud TANGUY" />
         <meta name="copyright" content="Arnaud TANGUY" />
 
+        <meta name="twitter:creator" content="@arntanguy">
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary">
+
 <meta name="keywords" content="blender, ogre3D, 3D, Programmation, " />
+
+<meta property="og:title" content="Créez Vos Mesh Ogre Sous Blender ! "/>
+<meta property="og:url" content="http://arntanguy.no-ip.org/creez-vos-mesh-ogre-sous-blender.html" />
+<meta property="og:description" content="Explains how to create UV-mapped models using blender, and export them for Ogre3D engine." />
+<meta property="og:site_name" content="VIM Proves The World" />
+<meta property="og:article:author" content="Arnaud TANGUY" />
+<meta property="og:article:published_time" content="2010-03-04T00:00:00+01:00" />
+<meta name="twitter:title" content="Créez Vos Mesh Ogre Sous Blender ! ">
+<meta name="twitter:description" content="Explains how to create UV-mapped models using blender, and export them for Ogre3D engine.">
+
         <title>Créez Vos Mesh Ogre Sous Blender !  · VIM Proves The World
 </title>
-        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/pygments.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/tipuesearch/tipuesearch.css" media="screen">
         <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/elegant.css" media="screen">
+        <link rel="stylesheet" type="text/css" href="http://arntanguy.no-ip.org/theme/css/custom.css" media="screen">
         <link href="http://arntanguy.no-ip.org/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="VIM Proves The World - Full Atom Feed" />
-    <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-46439484-1']);
-    _gaq.push(['_trackPageview']);
-    (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-    </script>
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-46439484-1', 'auto');
+    ga('send', 'pageview');
+</script>
     </head>
     <body>
         <div id="content-sans-footer">
         <div class="navbar navbar-static-top">
             <div class="navbar-inner">
-                <div class="container">
+                <div class="container-fluid">
                     <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -62,6 +78,7 @@
 <div class="row-fluid">
         <div class="span8 offset2 article-content">
 
+            
             <p>Si vous aimez le logiciel de modélisation 3D Blender, vous serez sans doute ravi de l’utiliser pour créer votre monde dans votre jeu utilisant le moteur Ogre.
 La bonne nouvelle, c’est que c’est d’une simplicité impressionnante, je vais profiter de ce billet pour me faire un petit mémo sur comment faire, ainsi que comment utiliser la technique de l’UV mapping avec Blender (je débute avec la 3D, que ça soit en programmation ou modélisation).</p>
 <p>L’exemple présenté ici sera fait sur un simple cube, que l’on va texturer, et intégrer dans un projet Ogre.</p>
@@ -233,6 +250,7 @@ Cliquez sur « Exporter ».</p>
 <li>Si le cube n’est pas texturé, vérifiez que vous avez bien un fichier Scene.material dans votre dossier script, et que son emplacement est correctement spécifié dans le fichier ressources.cfg</li>
 </ul>
 <p>Amusez vous bien, et si je n’ai pas été clair, n’hésitez pas à demander des précisions dans les commentaires.</p>
+            
             <section>
 <p id="comment-message">So what do you think? Did I miss something? Is any part
 unclear? Leave your comments below. </p>
@@ -291,15 +309,15 @@ unclear? Leave your comments below. </p>
 </a></li>
             </ul>
 <h4>Contact</h4>
-<a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
+    <a href="http://www.linkedin.com/pub/arnaud-tanguy/34/a69/6a6" title="My LinkedIn Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-linkedin sidebar-social-links"></i></a>
-<a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
+    <a href="https://twitter.com/arntanguy" title="My Twitter Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-twitter sidebar-social-links"></i></a>
-<a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
+    <a href="https://github.com/geenux" title="My Github Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-github sidebar-social-links"></i></a>
-<a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
+    <a href="https://bitbucket.org/arn_tanguy" title="My Bitbucket Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-bitbucket sidebar-social-links"></i></a>
-<a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
+    <a href="https://plus.google.com/u/0/+ArnaudTanguy29" title="My Google+ Profile" class="sidebar-social-links" target="_blank">
     <i class="fa fa-google+ sidebar-social-links"></i></a>
         </div>
         </section>
@@ -309,6 +327,7 @@ unclear? Leave your comments below. </p>
                 <div class="span1"></div>
             </div>
         </div>
+        <div id="push"></div>
     </div>
 <footer>
 <div id="footer">
@@ -324,7 +343,7 @@ Attribution-ShareAlike 3.0 Unported License</a>.</li>
     </ul>
 </div>
 </footer>            <script src="http://code.jquery.com/jquery.min.js"></script>
-        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
         <script>
             function validateForm(query)
             {
@@ -372,4 +391,6 @@ $('#disqus_thread').on('shown', function () {
 
 
     </body>
+    <!-- Theme: Elegant built for Pelican
+    License : http://oncrashreboot.com/pelican-elegant -->
 </html>
