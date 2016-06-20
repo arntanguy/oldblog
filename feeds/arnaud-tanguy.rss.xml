@@ -35,12 +35,12 @@ This did the trick for me, here are the steps I took to do just that:&lt;/p&gt;
 &lt;li&gt;
 &lt;p&gt;Remove the intel driver &lt;/p&gt;
 &lt;p&gt;::bash
-sudo apt-get remove xserver-xorg-video-intel&lt;/p&gt;
+  sudo apt-get remove xserver-xorg-video-intel&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Install modesetting&lt;/p&gt;
 &lt;p&gt;::bash
-sudo apt-get install xserver-xorg-video-modesetting&lt;/p&gt;
+  sudo apt-get install xserver-xorg-video-modesetting&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;After reboot, modesetting ought to be in use. If not, you may add it to your xorg.conf (this should not be necessary)&lt;/p&gt;
